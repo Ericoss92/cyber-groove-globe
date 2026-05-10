@@ -1,4 +1,4 @@
-import type { Artist, Country, Song } from "./types";
+import type { Artist, Country, Song } from "@/lib/types";
 
 export const COUNTRIES: Country[] = [
   { name: "France",         code: "FR", flag: "🇫🇷", continent: "Europe",        lat: 46.6,  lng: 2.2 },
