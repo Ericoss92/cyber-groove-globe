@@ -32,7 +32,7 @@ function ArtistPage() {
 
   const recommended = useMemo(() =>
     ARTISTS.filter(a =>
-      a.slug !== artist.slug && (a.country === artist.country || a.genres.some(g => artist.genres.includes(g)))
+      a.slug !== artist.slug && (a.country === artist.country || a.genres.some((g: string) => artist.genres.includes(g)))
     ).slice(0, 6),
   [artist]);
 
@@ -75,7 +75,7 @@ function ArtistPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-md bg-[color:var(--neon-green)] text-[color:var(--background)] font-medium hover:scale-105 transition box-glow-green">
               <Play className="size-4" /> Tout lire
             </button>
-            <button onClick={() => { artist.songs.forEach(s => storage.toggleFavorite(s)); p.bumpFav(); }}
+            <button onClick={() => { artist.songs.forEach((s: any) => storage.toggleFavorite(s)); p.bumpFav(); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition hover:scale-105 ${fav ? "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)]" : "border-border hover:border-[color:var(--neon-pink)]"}`}>
               <Heart className="size-4" /> Favoris
             </button>

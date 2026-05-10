@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCountryRouteImport } from './routes/country.$country'
+import { Route as ArtistSlugRouteImport } from './routes/artist.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const CountryCountryRoute = CountryCountryRouteImport.update({
   path: '/country/$country',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArtistSlugRoute = ArtistSlugRouteImport.update({
+  id: '/artist/$slug',
+  path: '/artist/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/country/$country'
+  fullPaths: '/' | '/artist/$slug' | '/country/$country'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/country/$country'
-  id: '__root__' | '/' | '/country/$country'
+  to: '/' | '/artist/$slug' | '/country/$country'
+  id: '__root__' | '/' | '/artist/$slug' | '/country/$country'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArtistSlugRoute: typeof ArtistSlugRoute
   CountryCountryRoute: typeof CountryCountryRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CountryCountryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/artist/$slug': {
+      id: '/artist/$slug'
+      path: '/artist/$slug'
+      fullPath: '/artist/$slug'
+      preLoaderRoute: typeof ArtistSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArtistSlugRoute: ArtistSlugRoute,
   CountryCountryRoute: CountryCountryRoute,
 }
 export const routeTree = rootRouteImport
