@@ -9,38 +9,148 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as RecentRouteImport } from './routes/recent'
+import { Route as PlaylistsRouteImport } from './routes/playlists'
+import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CountryCountryRouteImport } from './routes/country.$country'
+import { Route as ArtistSlugRouteImport } from './routes/artist.$slug'
 
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecentRoute = RecentRouteImport.update({
+  id: '/recent',
+  path: '/recent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaylistsRoute = PlaylistsRouteImport.update({
+  id: '/playlists',
+  path: '/playlists',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CountryCountryRoute = CountryCountryRouteImport.update({
+  id: '/country/$country',
+  path: '/country/$country',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtistSlugRoute = ArtistSlugRouteImport.update({
+  id: '/artist/$slug',
+  path: '/artist/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/favorites': typeof FavoritesRoute
+  '/playlists': typeof PlaylistsRoute
+  '/recent': typeof RecentRoute
+  '/search': typeof SearchRoute
+  '/artist/$slug': typeof ArtistSlugRoute
+  '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/favorites': typeof FavoritesRoute
+  '/playlists': typeof PlaylistsRoute
+  '/recent': typeof RecentRoute
+  '/search': typeof SearchRoute
+  '/artist/$slug': typeof ArtistSlugRoute
+  '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/favorites': typeof FavoritesRoute
+  '/playlists': typeof PlaylistsRoute
+  '/recent': typeof RecentRoute
+  '/search': typeof SearchRoute
+  '/artist/$slug': typeof ArtistSlugRoute
+  '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/favorites'
+    | '/playlists'
+    | '/recent'
+    | '/search'
+    | '/artist/$slug'
+    | '/country/$country'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/favorites'
+    | '/playlists'
+    | '/recent'
+    | '/search'
+    | '/artist/$slug'
+    | '/country/$country'
+  id:
+    | '__root__'
+    | '/'
+    | '/favorites'
+    | '/playlists'
+    | '/recent'
+    | '/search'
+    | '/artist/$slug'
+    | '/country/$country'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FavoritesRoute: typeof FavoritesRoute
+  PlaylistsRoute: typeof PlaylistsRoute
+  RecentRoute: typeof RecentRoute
+  SearchRoute: typeof SearchRoute
+  ArtistSlugRoute: typeof ArtistSlugRoute
+  CountryCountryRoute: typeof CountryCountryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recent': {
+      id: '/recent'
+      path: '/recent'
+      fullPath: '/recent'
+      preLoaderRoute: typeof RecentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playlists': {
+      id: '/playlists'
+      path: '/playlists'
+      fullPath: '/playlists'
+      preLoaderRoute: typeof PlaylistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +158,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/country/$country': {
+      id: '/country/$country'
+      path: '/country/$country'
+      fullPath: '/country/$country'
+      preLoaderRoute: typeof CountryCountryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/artist/$slug': {
+      id: '/artist/$slug'
+      path: '/artist/$slug'
+      fullPath: '/artist/$slug'
+      preLoaderRoute: typeof ArtistSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FavoritesRoute: FavoritesRoute,
+  PlaylistsRoute: PlaylistsRoute,
+  RecentRoute: RecentRoute,
+  SearchRoute: SearchRoute,
+  ArtistSlugRoute: ArtistSlugRoute,
+  CountryCountryRoute: CountryCountryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
