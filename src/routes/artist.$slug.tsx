@@ -58,7 +58,7 @@ function ArtistPage() {
           <div className="min-w-0">
             <p className="font-mono text-xs text-muted-foreground">🌍 {artist.country} · {artist.continent} · ⏱ depuis {artist.foundedYear} · ⭐ {artist.followers.toLocaleString()} fans</p>
             <div className="flex flex-wrap gap-1.5 my-2">
-              {artist.genres.map(g => (
+              {artist.genres.map((g: string) => (
                 <span key={g} className="px-2 py-0.5 rounded-full text-xs font-mono bg-[color:var(--neon-pink)]/20 text-[color:var(--neon-pink)] border border-[color:var(--neon-pink)]/40">{g}</span>
               ))}
             </div>
