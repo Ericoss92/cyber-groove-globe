@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as RecentRouteImport } from './routes/recent'
 import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,6 +20,11 @@ import { Route as ArtistSlugRouteImport } from './routes/artist.$slug'
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecentRoute = RecentRouteImport.update({
+  id: '/recent',
+  path: '/recent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlaylistsRoute = PlaylistsRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/playlists': typeof PlaylistsRoute
+  '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/playlists': typeof PlaylistsRoute
+  '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/playlists': typeof PlaylistsRoute
+  '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/playlists'
+    | '/recent'
     | '/search'
     | '/artist/$slug'
     | '/country/$country'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/playlists'
+    | '/recent'
     | '/search'
     | '/artist/$slug'
     | '/country/$country'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/playlists'
+    | '/recent'
     | '/search'
     | '/artist/$slug'
     | '/country/$country'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
   PlaylistsRoute: typeof PlaylistsRoute
+  RecentRoute: typeof RecentRoute
   SearchRoute: typeof SearchRoute
   ArtistSlugRoute: typeof ArtistSlugRoute
   CountryCountryRoute: typeof CountryCountryRoute
@@ -115,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recent': {
+      id: '/recent'
+      path: '/recent'
+      fullPath: '/recent'
+      preLoaderRoute: typeof RecentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/playlists': {
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
   PlaylistsRoute: PlaylistsRoute,
+  RecentRoute: RecentRoute,
   SearchRoute: SearchRoute,
   ArtistSlugRoute: ArtistSlugRoute,
   CountryCountryRoute: CountryCountryRoute,
