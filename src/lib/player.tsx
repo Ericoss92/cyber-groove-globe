@@ -1,6 +1,31 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Song } from "./types";
 import { storage } from "./storage";
+import { artistBySlug } from "@/data/music";
+
+/** Fire-and-forget server log of a play event (best-effort, ignores errors). */
+function logPlayToServer(song: Song) {
+  if (typeof window === "undefined") return;
+  try {
+    const t = localStorage.getItem("sw.token");
+    if (!t) return;
+  } catch { return; }
+  const a = artistBySlug(song.artistSlug);
+  import("@/api/client").then(({ api }) => {
+    api.logPlay({
+      songId: song.id,
+      songTitle: song.title,
+      artistName: song.artistName,
+      artistSlug: song.artistSlug,
+      artistCountry: a?.country,
+      artistContinent: a?.continent,
+      genre: song.genre,
+      durationPlayedSeconds: 0,
+      completed: false,
+      playedPercentage: 0,
+    }).catch(() => {});
+  }).catch(() => {});
+}
 
 type Ctx = {
   current: Song | null;
@@ -189,6 +214,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       a.src = current.url;
       a.play().catch(() => setPlaying(false));
       storage.addRecent(current);
+      logPlayToServer(current);
     }
   }, [current, ensureAudioGraph]);
 
@@ -221,6 +247,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     inactive.currentTime = 0;
     inactive.play().catch(() => {});
     storage.addRecent(nextSong);
+    logPlayToServer(nextSong);
 
     const t = ctx.currentTime;
     gA.gain.cancelScheduledValues(t);
