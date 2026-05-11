@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -84,6 +84,14 @@ export default function AppSidebar() {
               <Link to="/settings" aria-label="Paramètres">
                 <SettingsIcon className="size-4" />
                 {!collapsed && <span>Paramètres</span>}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
+              <Link to="/admin-approval" aria-label="Admin">
+                <ShieldCheck className="size-4" />
+                {!collapsed && <span>Admin</span>}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
