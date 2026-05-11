@@ -9,14 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RecentRouteImport } from './routes/recent'
 import { Route as PlaylistsRouteImport } from './routes/playlists'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCountryRouteImport } from './routes/country.$country'
 import { Route as ArtistSlugRouteImport } from './routes/artist.$slug'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -32,9 +40,19 @@ const PlaylistsRoute = PlaylistsRouteImport.update({
   path: '/playlists',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -55,29 +73,38 @@ const ArtistSlugRoute = ArtistSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
+  '/login': typeof LoginRoute
   '/playlists': typeof PlaylistsRoute
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
+  '/login': typeof LoginRoute
   '/playlists': typeof PlaylistsRoute
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
+  '/login': typeof LoginRoute
   '/playlists': typeof PlaylistsRoute
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
@@ -85,44 +112,63 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/favorites'
+    | '/login'
     | '/playlists'
     | '/recent'
     | '/search'
+    | '/settings'
     | '/artist/$slug'
     | '/country/$country'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/favorites'
+    | '/login'
     | '/playlists'
     | '/recent'
     | '/search'
+    | '/settings'
     | '/artist/$slug'
     | '/country/$country'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/favorites'
+    | '/login'
     | '/playlists'
     | '/recent'
     | '/search'
+    | '/settings'
     | '/artist/$slug'
     | '/country/$country'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   FavoritesRoute: typeof FavoritesRoute
+  LoginRoute: typeof LoginRoute
   PlaylistsRoute: typeof PlaylistsRoute
   RecentRoute: typeof RecentRoute
   SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
   ArtistSlugRoute: typeof ArtistSlugRoute
   CountryCountryRoute: typeof CountryCountryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
@@ -144,11 +190,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlaylistsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/favorites': {
       id: '/favorites'
       path: '/favorites'
       fullPath: '/favorites'
       preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -177,23 +237,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   FavoritesRoute: FavoritesRoute,
+  LoginRoute: LoginRoute,
   PlaylistsRoute: PlaylistsRoute,
   RecentRoute: RecentRoute,
   SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
   ArtistSlugRoute: ArtistSlugRoute,
   CountryCountryRoute: CountryCountryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

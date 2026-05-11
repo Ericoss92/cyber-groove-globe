@@ -4,14 +4,21 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import appCss from "../styles.css?url";
 import Header from "@/components/Header";
 import PlayerBar from "@/components/PlayerBar";
+import Starfield from "@/components/Starfield";
+import AppSidebar from "@/components/AppSidebar";
 import { PlayerProvider } from "@/lib/player";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { storage } from "@/lib/storage";
 
 function NotFoundComponent() {
   return (
@@ -76,18 +83,63 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Auth gate — runs client-side only (avoids SSR/hydration drift).
+ * - /login and /admin are always reachable.
+ * - Everywhere else requires `authorized: true` on the current user.
+ */
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const u = storage.currentUser();
+    const open = pathname === "/login" || pathname === "/admin";
+    if (!open && (!u || !u.authorized)) {
+      navigate({ to: "/login", replace: true });
+    }
+    setReady(true);
+  }, [pathname, navigate]);
+
+  // Don't flash protected content during the check
+  if (!ready && pathname !== "/login" && pathname !== "/admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-mono text-xs text-muted-foreground animate-pulse">// initialising grid…</p>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const isPublic = pathname === "/login";
+
   return (
     <QueryClientProvider client={queryClient}>
       <PlayerProvider>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 pb-28">
+        <Starfield />
+        <AuthGate>
+          {isPublic ? (
             <Outlet />
-          </main>
-          <PlayerBar />
-        </div>
+          ) : (
+            <SidebarProvider defaultOpen>
+              <div className="min-h-screen flex w-full">
+                <AppSidebar />
+                <SidebarInset className="flex flex-col bg-transparent">
+                  <Header />
+                  <main className="flex-1 pb-32">
+                    <Outlet />
+                  </main>
+                  <PlayerBar />
+                </SidebarInset>
+              </div>
+            </SidebarProvider>
+          )}
+        </AuthGate>
       </PlayerProvider>
     </QueryClientProvider>
   );

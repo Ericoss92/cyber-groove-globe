@@ -6,6 +6,7 @@ import { usePlayer } from "@/lib/player";
 import { storage } from "@/lib/storage";
 import { Play, Heart, Plus, Instagram, Twitter, Youtube, Music2 } from "lucide-react";
 import AddToPlaylistModal from "@/components/AddToPlaylistModal";
+import { formatNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/artist/$slug")({
   loader: ({ params }) => {
@@ -56,7 +57,7 @@ function ArtistPage() {
         <div className="grid md:grid-cols-[200px_1fr_auto] gap-5 items-start glass rounded-2xl p-5 box-glow-green">
           <img src={artist.image} alt={artist.name} className="size-40 md:size-48 rounded-xl object-cover box-glow-pink" />
           <div className="min-w-0">
-            <p className="font-mono text-xs text-muted-foreground">🌍 {artist.country} · {artist.continent} · ⏱ depuis {artist.foundedYear} · ⭐ {artist.followers.toLocaleString()} fans</p>
+            <p className="font-mono text-xs text-muted-foreground">🌍 {artist.country} · {artist.continent} · ⏱ depuis {artist.foundedYear} · ⭐ {formatNumber(artist.followers)} fans</p>
             <div className="flex flex-wrap gap-1.5 my-2">
               {artist.genres.map((g: string) => (
                 <span key={g} className="px-2 py-0.5 rounded-full text-xs font-mono bg-[color:var(--neon-pink)]/20 text-[color:var(--neon-pink)] border border-[color:var(--neon-pink)]/40">{g}</span>

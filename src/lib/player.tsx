@@ -28,17 +28,41 @@ type Ctx = {
   expanded: boolean;
   setExpanded: (b: boolean) => void;
 
-  favTick: number; // bump to refresh UI consumers
+  favTick: number;
   bumpFav: () => void;
 };
 
 const PlayerCtx = createContext<Ctx | null>(null);
 
+/**
+ * PlayerProvider — Web Audio engine with two HTMLAudioElement nodes
+ * for gapless / crossfade transitions.
+ *
+ * Strategy:
+ *  - audioA / audioB are alternated. `activeKey` points at the current one.
+ *  - GainNodes per element allow smooth fade in / fade out.
+ *  - When the active track passes (duration - crossfade) seconds and
+ *    crossfade > 0, we start the next track on the inactive element and
+ *    cross-ramp gains over the configured duration.
+ */
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  if (typeof window !== "undefined" && !audioRef.current) {
-    audioRef.current = new Audio();
-    audioRef.current.preload = "metadata";
+  // Two audio elements + their gain nodes
+  const audioA = useRef<HTMLAudioElement | null>(null);
+  const audioB = useRef<HTMLAudioElement | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const gainA = useRef<GainNode | null>(null);
+  const gainB = useRef<GainNode | null>(null);
+  const masterGain = useRef<GainNode | null>(null);
+  const activeKey = useRef<"A" | "B">("A");
+  const crossfading = useRef(false);
+
+  if (typeof window !== "undefined" && !audioA.current) {
+    audioA.current = new Audio();
+    audioB.current = new Audio();
+    audioA.current.preload = "metadata";
+    audioB.current.preload = "metadata";
+    audioA.current.crossOrigin = "anonymous";
+    audioB.current.crossOrigin = "anonymous";
   }
 
   const [queue, setQueue] = useState<Song[]>([]);
@@ -52,78 +76,178 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [shuffle, setShuffle] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [favTick, setFavTick] = useState(0);
+  const [crossfade, setCrossfade] = useState(3);
   const bumpFav = useCallback(() => setFavTick(t => t + 1), []);
 
   const current = queue[index] ?? null;
+  const getActive = () => (activeKey.current === "A" ? audioA.current! : audioB.current!);
+  const getInactive = () => (activeKey.current === "A" ? audioB.current! : audioA.current!);
+  const getActiveGain = () => (activeKey.current === "A" ? gainA.current : gainB.current);
+  const getInactiveGain = () => (activeKey.current === "A" ? gainB.current : gainA.current);
 
-  // Hydrate settings
+  // Lazy-init Web Audio graph (after a user gesture browsers allow ctx)
+  const ensureAudioGraph = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (ctxRef.current) return;
+    try {
+      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AC();
+      ctxRef.current = ctx;
+      masterGain.current = ctx.createGain();
+      masterGain.current.gain.value = volume;
+      masterGain.current.connect(ctx.destination);
+      const sA = ctx.createMediaElementSource(audioA.current!);
+      const sB = ctx.createMediaElementSource(audioB.current!);
+      gainA.current = ctx.createGain();
+      gainB.current = ctx.createGain();
+      gainA.current.gain.value = 1;
+      gainB.current.gain.value = 0;
+      sA.connect(gainA.current).connect(masterGain.current);
+      sB.connect(gainB.current).connect(masterGain.current);
+    } catch (e) {
+      console.warn("WebAudio unavailable, falling back to plain audio", e);
+    }
+  }, [volume]);
+
+  // Hydrate settings (volume, repeat, shuffle, crossfade)
   useEffect(() => {
     const s = storage.getSettings();
     setVolumeState(s.volume);
     setRepeatMode(s.repeatMode);
     setShuffle(s.shuffle);
-    if (audioRef.current) audioRef.current.volume = s.volume;
+    setCrossfade(s.crossfade);
+    if (audioA.current) audioA.current.volume = s.volume;
+    if (audioB.current) audioB.current.volume = s.volume;
+    // Watch for cross-tab settings changes
+    const onStorage = () => {
+      const ns = storage.getSettings();
+      setCrossfade(ns.crossfade);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   // Persist settings
   useEffect(() => {
     storage.setSettings({ volume, repeatMode, shuffle });
-  }, [volume, repeatMode, shuffle]);
+    if (masterGain.current) masterGain.current.gain.value = muted ? 0 : volume;
+    else {
+      if (audioA.current) audioA.current.volume = muted ? 0 : volume;
+      if (audioB.current) audioB.current.volume = muted ? 0 : volume;
+    }
+  }, [volume, repeatMode, shuffle, muted]);
 
-  // Audio events
+  // Audio events on active element
   useEffect(() => {
-    const a = audioRef.current; if (!a) return;
-    const onTime = () => setCurrentTime(a.currentTime);
-    const onMeta = () => setDuration(a.duration || 0);
+    const handler = () => {
+      const a = getActive();
+      setCurrentTime(a.currentTime);
+      setDuration(a.duration || 0);
+      // Crossfade trigger
+      if (
+        crossfade > 0 &&
+        !crossfading.current &&
+        a.duration &&
+        a.currentTime >= a.duration - crossfade &&
+        queue.length > 1 &&
+        repeatMode !== 2
+      ) {
+        startCrossfade();
+      }
+    };
     const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onEnded = () => handleEnded();
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("loadedmetadata", onMeta);
-    a.addEventListener("play", onPlay);
-    a.addEventListener("pause", onPause);
-    a.addEventListener("ended", onEnded);
+    const onPause = () => { if (!crossfading.current) setPlaying(false); };
+    const onEnded = () => { if (!crossfading.current) handleEnded(); };
+
+    [audioA.current, audioB.current].forEach(a => {
+      if (!a) return;
+      a.addEventListener("timeupdate", handler);
+      a.addEventListener("loadedmetadata", handler);
+      a.addEventListener("play", onPlay);
+      a.addEventListener("pause", onPause);
+      a.addEventListener("ended", onEnded);
+    });
     return () => {
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("loadedmetadata", onMeta);
-      a.removeEventListener("play", onPlay);
-      a.removeEventListener("pause", onPause);
-      a.removeEventListener("ended", onEnded);
+      [audioA.current, audioB.current].forEach(a => {
+        if (!a) return;
+        a.removeEventListener("timeupdate", handler);
+        a.removeEventListener("loadedmetadata", handler);
+        a.removeEventListener("play", onPlay);
+        a.removeEventListener("pause", onPause);
+        a.removeEventListener("ended", onEnded);
+      });
     };
   });
 
-  // Load src on track change
+  // Load src on track change (without crossfade)
   useEffect(() => {
-    const a = audioRef.current; if (!a || !current) return;
+    if (!current) return;
+    if (crossfading.current) return; // crossfade path manages loading itself
+    ensureAudioGraph();
+    const a = getActive();
     if (a.src !== current.url) {
       a.src = current.url;
       a.play().catch(() => setPlaying(false));
       storage.addRecent(current);
     }
-  }, [current]);
+  }, [current, ensureAudioGraph]);
+
+  function pickNextIndex(): number | null {
+    if (queue.length === 0) return null;
+    if (shuffle) return Math.floor(Math.random() * queue.length);
+    let n = index + 1;
+    if (n >= queue.length) {
+      if (repeatMode === 1) return 0;
+      return null;
+    }
+    return n;
+  }
+
+  function startCrossfade() {
+    const next = pickNextIndex();
+    if (next === null) return;
+    const ctx = ctxRef.current;
+    const gA = getActiveGain();
+    const gB = getInactiveGain();
+    const inactive = getInactive();
+    if (!ctx || !gA || !gB) {
+      // No WebAudio: just hard-skip
+      setIndex(next);
+      return;
+    }
+    crossfading.current = true;
+    const nextSong = queue[next];
+    inactive.src = nextSong.url;
+    inactive.currentTime = 0;
+    inactive.play().catch(() => {});
+    storage.addRecent(nextSong);
+
+    const t = ctx.currentTime;
+    gA.gain.cancelScheduledValues(t);
+    gB.gain.cancelScheduledValues(t);
+    gA.gain.setValueAtTime(gA.gain.value, t);
+    gB.gain.setValueAtTime(0, t);
+    gA.gain.linearRampToValueAtTime(0, t + crossfade);
+    gB.gain.linearRampToValueAtTime(1, t + crossfade);
+
+    window.setTimeout(() => {
+      const oldActive = getActive();
+      try { oldActive.pause(); oldActive.currentTime = 0; } catch {}
+      activeKey.current = activeKey.current === "A" ? "B" : "A";
+      crossfading.current = false;
+      setIndex(next);
+    }, crossfade * 1000);
+  }
 
   function handleEnded() {
     if (repeatMode === 2) {
-      const a = audioRef.current; if (a) { a.currentTime = 0; a.play(); }
+      const a = getActive(); if (a) { a.currentTime = 0; a.play(); }
       return;
     }
-    nextInternal();
-  }
-
-  const nextInternal = useCallback(() => {
-    if (queue.length === 0) return;
-    let n: number;
-    if (shuffle) {
-      n = Math.floor(Math.random() * queue.length);
-    } else {
-      n = index + 1;
-      if (n >= queue.length) {
-        if (repeatMode === 1) n = 0;
-        else { setPlaying(false); audioRef.current?.pause(); return; }
-      }
-    }
+    const n = pickNextIndex();
+    if (n === null) { setPlaying(false); return; }
     setIndex(n);
-  }, [queue, index, shuffle, repeatMode]);
+  }
 
   const value: Ctx = useMemo(() => ({
     current, queue, index, playing, currentTime, duration, volume, muted, repeatMode, shuffle,
@@ -131,37 +255,46 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     favTick, bumpFav,
     playQueue: (songs, startIndex = 0) => {
       if (!songs.length) return;
+      ensureAudioGraph();
       setQueue(songs);
       setIndex(startIndex);
       setPlaying(true);
     },
     playSong: (song) => {
+      ensureAudioGraph();
       const inQueue = queue.findIndex(s => s.id === song.id);
-      if (inQueue >= 0) { setIndex(inQueue); setPlaying(true); audioRef.current?.play(); return; }
+      if (inQueue >= 0) { setIndex(inQueue); setPlaying(true); getActive().play(); return; }
       setQueue([song]); setIndex(0); setPlaying(true);
     },
     toggle: () => {
-      const a = audioRef.current; if (!a) return;
-      if (a.paused) a.play(); else a.pause();
+      ensureAudioGraph();
+      const a = getActive(); if (!a) return;
+      if (a.paused) { ctxRef.current?.resume(); a.play(); } else a.pause();
     },
-    next: nextInternal,
+    next: () => {
+      const n = pickNextIndex();
+      if (n === null) return;
+      setIndex(n);
+    },
     prev: () => {
-      const a = audioRef.current;
+      const a = getActive();
       if (a && a.currentTime > 3) { a.currentTime = 0; return; }
       setIndex(i => Math.max(0, i - 1));
     },
-    seek: (sec) => { const a = audioRef.current; if (a) a.currentTime = sec; },
+    seek: (sec) => { const a = getActive(); if (a) a.currentTime = sec; },
     setVolume: (v) => {
       setVolumeState(v); setMuted(v === 0);
-      const a = audioRef.current; if (a) { a.volume = v; a.muted = v === 0; }
+      if (masterGain.current) masterGain.current.gain.value = v;
+      else { if (audioA.current) audioA.current.volume = v; if (audioB.current) audioB.current.volume = v; }
     },
     toggleMute: () => {
-      const a = audioRef.current; if (!a) return;
-      const m = !muted; setMuted(m); a.muted = m;
+      const m = !muted; setMuted(m);
+      if (masterGain.current) masterGain.current.gain.value = m ? 0 : volume;
+      else { if (audioA.current) audioA.current.muted = m; if (audioB.current) audioB.current.muted = m; }
     },
     cycleRepeat: () => setRepeatMode(r => ((r + 1) % 3) as 0 | 1 | 2),
     toggleShuffle: () => setShuffle(s => !s),
-  }), [current, queue, index, playing, currentTime, duration, volume, muted, repeatMode, shuffle, expanded, favTick, nextInternal, bumpFav]);
+  }), [current, queue, index, playing, currentTime, duration, volume, muted, repeatMode, shuffle, expanded, favTick, bumpFav, ensureAudioGraph]);
 
   // Keyboard shortcuts
   useEffect(() => {
