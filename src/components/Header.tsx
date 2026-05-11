@@ -1,10 +1,15 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Search, Heart, ListMusic, Clock, Settings as SettingsIcon } from "lucide-react";
+import { Search } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { searchAll } from "@/data/music";
 import { usePlayer } from "@/lib/player";
 import type { Artist, Song } from "@/lib/types";
 
+/**
+ * Header — slim top bar containing only the sidebar trigger and the
+ * global search. Primary navigation has moved into the AppSidebar.
+ */
 export default function Header() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -29,12 +34,12 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 glass border-b border-[color:var(--neon-green)]/30">
-      <div className="mx-auto max-w-[1600px] flex items-center gap-4 px-4 md:px-6 py-3">
-        <Link to="/" className="font-display font-extrabold text-2xl tracking-[0.18em] glow-green shrink-0">
-          SOUND<span className="text-[color:var(--neon-pink)] glow-pink">WAVE</span>
-        </Link>
-
+    <header className="sticky top-0 z-30 glass border-b border-[color:var(--neon-green)]/30">
+      <div className="flex items-center gap-3 px-3 md:px-5 py-2.5">
+        <SidebarTrigger
+          className="text-[color:var(--neon-cyan)] hover:text-[color:var(--neon-green)] focus-visible:ring-2 focus-visible:ring-[color:var(--neon-green)]"
+          aria-label="Basculer la barre latérale"
+        />
         <div className="relative flex-1 max-w-2xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--neon-cyan)]" aria-hidden />
           <input
@@ -47,7 +52,7 @@ export default function Header() {
               if (e.key === "Enter" && q.trim()) { navigate({ to: "/search", search: { q } }); setOpen(false); }
               if (e.key === "Escape") setOpen(false);
             }}
-            placeholder="Chercher artiste, chanson...   (/)"
+            placeholder="Chercher artiste, chanson…   (/)"
             aria-label="Rechercher"
             className="w-full pl-10 pr-3 py-2 rounded-md bg-[color:var(--surface)]/60 border border-[color:var(--neon-cyan)]/30 focus:border-[color:var(--neon-cyan)] focus:outline-none focus:ring-2 focus:ring-[color:var(--neon-cyan)]/40 font-mono text-sm placeholder:text-muted-foreground"
           />
@@ -97,24 +102,7 @@ export default function Header() {
             </div>
           )}
         </div>
-
-        <nav className="flex items-center gap-1">
-          <NavIcon to="/playlists" label="Playlists"><ListMusic className="size-5" /></NavIcon>
-          <NavIcon to="/favorites" label="Favoris"><Heart className="size-5" /></NavIcon>
-          <NavIcon to="/recent" label="Récent"><Clock className="size-5" /></NavIcon>
-          <NavIcon to="/" label="Accueil"><SettingsIcon className="size-5 opacity-60" /></NavIcon>
-        </nav>
       </div>
     </header>
-  );
-}
-
-function NavIcon({ to, label, children }: { to: string; label: string; children: React.ReactNode }) {
-  return (
-    <Link to={to} aria-label={label}
-      className="p-2 rounded-md text-foreground/80 hover:text-[color:var(--neon-green)] hover:bg-[color:var(--neon-green)]/10 transition-all hover:scale-110"
-      activeProps={{ className: "p-2 rounded-md text-[color:var(--neon-green)] bg-[color:var(--neon-green)]/10" }}>
-      {children}
-    </Link>
   );
 }
