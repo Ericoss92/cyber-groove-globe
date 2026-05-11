@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { storage, type AuthUser } from "@/lib/storage";
 import { ShieldCheck, ShieldAlert, Trash2 } from "lucide-react";
 
@@ -14,7 +14,10 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const [users, setUsers] = useState<AuthUser[]>(() => storage.getUsers());
+  const [users, setUsers] = useState<AuthUser[]>([]);
+  // Avoid SSR/CSR mismatch: read localStorage only after mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setUsers(storage.getUsers()); }, []);
 
   function refresh() { setUsers(storage.getUsers()); }
   function toggle(u: AuthUser) { storage.setAuthorized(u.username, !u.authorized); refresh(); }

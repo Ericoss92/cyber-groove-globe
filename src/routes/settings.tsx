@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { storage, type Settings, type Theme } from "@/lib/storage";
-import { ShieldCheck, ShieldAlert, Volume2, Sparkles, Cpu, User2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Volume2, Sparkles, Cpu, User2, BarChart3 } from "lucide-react";
+import { useStats } from "@/hooks/useStats";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -90,6 +91,82 @@ function SettingsPage() {
           )}
         </Row>
       </Card>
+
+      <StatsCard />
+    </div>
+  );
+}
+
+function StatsCard() {
+  const { data, error, loading, refresh } = useStats();
+  return (
+    <section className="glass rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="flex items-center gap-2 font-display text-lg text-[color:var(--neon-cyan)]">
+          <BarChart3 className="size-4" /> Statistiques d'écoute
+        </h2>
+        <button onClick={refresh} className="text-[10px] font-mono text-muted-foreground hover:text-[color:var(--neon-cyan)]">
+          {loading ? "…" : "↻ refresh"}
+        </button>
+      </div>
+
+      {error && (
+        <p className="text-xs font-mono text-muted-foreground">
+          // backend hors-ligne — démarrez le serveur Node : <code className="text-[color:var(--neon-pink)]">cd server &amp;&amp; npm run dev</code>
+        </p>
+      )}
+
+      {data && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+            <Stat label="Minutes" value={data.totalListeningTimeMinutes} accent="green" />
+            <Stat label="Écoutes" value={data.totalSongsPlayed} accent="cyan" />
+            <Stat label="Top artiste" value={data.favoriteArtist ?? "—"} accent="pink" small />
+            <Stat label="Top pays" value={data.favoriteCountry ?? "—"} accent="cyan" small />
+          </div>
+          <TopList title="Top 10 artistes" items={data.topArtists} />
+          <TopList title="Top 10 genres" items={data.topGenres} />
+          <TopList title="Top 10 pays" items={data.topCountries} />
+        </div>
+      )}
+
+      {!data && !error && loading && <p className="text-xs font-mono text-muted-foreground">// chargement…</p>}
+
+      <p className="mt-4 text-[10px] font-mono text-muted-foreground">
+        Données depuis le backend Node/MariaDB. Voir aussi <Link to="/admin-approval" className="text-[color:var(--neon-pink)] underline">console admin</Link>.
+      </p>
+    </section>
+  );
+}
+
+function Stat({ label, value, accent, small }: { label: string; value: any; accent: "green" | "cyan" | "pink"; small?: boolean }) {
+  const c = accent === "green" ? "text-[color:var(--neon-green)]" : accent === "pink" ? "text-[color:var(--neon-pink)]" : "text-[color:var(--neon-cyan)]";
+  return (
+    <div className="rounded-md bg-[color:var(--surface)]/40 p-3 border border-[color:var(--neon-cyan)]/10">
+      <p className={`font-display ${small ? "text-sm truncate" : "text-2xl"} ${c}`}>{value}</p>
+      <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-1">{label}</p>
+    </div>
+  );
+}
+
+function TopList({ title, items }: { title: string; items: { name: string; count: number }[] }) {
+  if (!items?.length) return null;
+  const max = Math.max(...items.map(i => i.count));
+  return (
+    <div>
+      <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2">{title}</p>
+      <div className="space-y-1">
+        {items.slice(0, 10).map((it, i) => (
+          <div key={`${it.name}-${i}`} className="flex items-center gap-2 text-xs font-mono">
+            <span className="w-5 text-muted-foreground">{i + 1}.</span>
+            <span className="flex-1 truncate">{it.name}</span>
+            <span className="w-32 h-1.5 bg-[color:var(--surface)] rounded-full overflow-hidden">
+              <span className="block h-full bg-[color:var(--neon-green)]" style={{ width: `${(it.count / max) * 100}%` }} />
+            </span>
+            <span className="w-10 text-right text-muted-foreground">{it.count}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

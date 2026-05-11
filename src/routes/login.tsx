@@ -28,19 +28,42 @@ function LoginPage() {
     if (u?.authorized) navigate({ to: "/" });
   }, [navigate]);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null); setInfo(null);
-    const r = mode === "login"
-      ? storage.login(username, password)
-      : storage.register(username, password);
-    if (!r.ok) { setError(r.error); return; }
-    const u = storage.currentUser();
-    if (u && !u.authorized) {
-      setInfo("Compte créé. Accès en attente de validation par l'administrateur.");
-      return;
+    // 1) Try real backend (Node/Express + MariaDB)
+    try {
+      const { api } = await import("@/api/client");
+      if (mode === "register") {
+        await api.register(username, password);
+        setInfo("Compte créé. Accès en attente de validation par l'administrateur.");
+        return;
+      } else {
+        const r = await api.login(username, password);
+        // sync local gatekeeper so existing UI keeps working
+        if (r.user.authorized) {
+          storage.setUsers([{ username: r.user.username, passwordHash: "api", authorized: true, createdAt: new Date().toISOString() }, ...storage.getUsers().filter(u => u.username !== r.user.username)]);
+          storage.setAuth({ username: r.user.username });
+          navigate({ to: "/" });
+          return;
+        }
+        setInfo("Compte non encore validé par l'administrateur.");
+        return;
+      }
+    } catch (apiErr: any) {
+      // 2) Fallback local (offline preview / no backend)
+      if (apiErr?.status && apiErr.status >= 400 && apiErr.status < 500) {
+        setError(apiErr.message); return;
+      }
+      const r = mode === "login" ? storage.login(username, password) : storage.register(username, password);
+      if (!r.ok) { setError(r.error); return; }
+      const u = storage.currentUser();
+      if (u && !u.authorized) {
+        setInfo("Compte créé localement. Accès en attente de validation administrateur.");
+        return;
+      }
+      navigate({ to: "/" });
     }
-    navigate({ to: "/" });
   }
 
   return (

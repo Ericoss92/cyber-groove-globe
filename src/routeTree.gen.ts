@@ -15,6 +15,7 @@ import { Route as RecentRouteImport } from './routes/recent'
 import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as AdminApprovalRouteImport } from './routes/admin-approval'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCountryRouteImport } from './routes/country.$country'
@@ -50,6 +51,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminApprovalRoute = AdminApprovalRouteImport.update({
+  id: '/admin-approval',
+  path: '/admin-approval',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -74,6 +80,7 @@ const ArtistSlugRoute = ArtistSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-approval': typeof AdminApprovalRoute
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/playlists': typeof PlaylistsRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-approval': typeof AdminApprovalRoute
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/playlists': typeof PlaylistsRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-approval': typeof AdminApprovalRoute
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/playlists': typeof PlaylistsRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-approval'
     | '/favorites'
     | '/login'
     | '/playlists'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-approval'
     | '/favorites'
     | '/login'
     | '/playlists'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-approval'
     | '/favorites'
     | '/login'
     | '/playlists'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminApprovalRoute: typeof AdminApprovalRoute
   FavoritesRoute: typeof FavoritesRoute
   LoginRoute: typeof LoginRoute
   PlaylistsRoute: typeof PlaylistsRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-approval': {
+      id: '/admin-approval'
+      path: '/admin-approval'
+      fullPath: '/admin-approval'
+      preLoaderRoute: typeof AdminApprovalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminApprovalRoute: AdminApprovalRoute,
   FavoritesRoute: FavoritesRoute,
   LoginRoute: LoginRoute,
   PlaylistsRoute: PlaylistsRoute,
