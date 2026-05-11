@@ -20,7 +20,7 @@ export default function PlayerBar() {
 
   return (
     <>
-      <div className="fixed bottom-0 inset-x-0 z-40 glass border-t border-[color:var(--neon-green)]/40 box-glow-green">
+      <div className="fixed bottom-3 inset-x-3 md:inset-x-6 z-40 glass rounded-2xl border border-[color:var(--neon-green)]/40 box-glow-green animate-rise">
         <div className="mx-auto max-w-[1600px] grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-6 px-3 md:px-6 py-2.5">
           {/* Left: track info */}
           <div className="flex items-center gap-3 min-w-0">
