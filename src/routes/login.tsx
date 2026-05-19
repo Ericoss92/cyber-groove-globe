@@ -117,12 +117,7 @@ function LoginPage() {
         </form>
 
         <p className="mt-6 text-[10px] font-mono text-muted-foreground text-center">
-          Plateforme privée. Tous les nouveaux comptes nécessitent une validation manuelle.
-        </p>
-        <p className="mt-2 text-center">
-          <Link to="/admin" className="text-[10px] font-mono text-[color:var(--neon-cyan)]/60 hover:text-[color:var(--neon-cyan)] underline">
-            Console admin (validation)
-          </Link>
+          Plateforme privée. Tous les nouveaux comptes nécessitent une validation manuelle par un administrateur.
         </p>
       </div>
     </div>
