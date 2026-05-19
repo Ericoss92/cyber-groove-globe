@@ -85,9 +85,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Auth gate — runs client-side only (avoids SSR/hydration drift).
- * - /login and /admin are always reachable.
- * - Everywhere else requires `authorized: true` on the current user.
+ * Auth gate — single source of truth = the API.
+ *  - Public routes: /login.
+ *  - /admin-approval : admin only (server claim `admin:true`).
+ *  - Other routes  : require an API session with `authorized:true`.
+ * Offline fallback : if API unreachable but local `storage.currentUser()`
+ * exists and is `authorized`, we let the user in (read-only).
  */
 function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -95,16 +98,33 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const u = storage.currentUser();
-    const open = pathname === "/login" || pathname === "/admin";
-    if (!open && (!u || !u.authorized)) {
-      navigate({ to: "/login", replace: true });
+    let cancelled = false;
+    const open = pathname === "/login";
+    async function check() {
+      // Fast path: cached user from API
+      let user = cachedUser.get();
+      // Verify with /me when we have a token, but never block on it
+      if (tokens.access) {
+        api.me().then((u) => { if (!cancelled) cachedUser.set(u); }).catch(() => {});
+      }
+      // Offline fallback
+      if (!user) {
+        const local = storage.currentUser();
+        if (local) user = { id: 0, username: local.username, authorized: !!local.authorized, admin: false };
+      }
+      if (open) { setReady(true); return; }
+      if (!user || !user.authorized) {
+        navigate({ to: "/login", replace: true });
+      } else if (pathname === "/admin-approval" && !user.admin) {
+        navigate({ to: "/", replace: true });
+      }
+      if (!cancelled) setReady(true);
     }
-    setReady(true);
+    check();
+    return () => { cancelled = true; };
   }, [pathname, navigate]);
 
-  // Don't flash protected content during the check
-  if (!ready && pathname !== "/login" && pathname !== "/admin") {
+  if (!ready && pathname !== "/login") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="font-mono text-xs text-muted-foreground animate-pulse">// initialising grid…</p>
