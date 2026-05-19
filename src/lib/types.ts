@@ -2,7 +2,13 @@ export type Song = {
   id: string;
   title: string;
   duration: number; // seconds
+  /** Legacy / fallback remote sample URL. */
   url: string;
+  /**
+   * Optional local audio URL (e.g. /music/europe/france/pop/artist/song.mp3).
+   * When present, the player loads this first and falls back to `url` on error.
+   */
+  audioUrl?: string;
   artistSlug: string;
   artistName: string;
   genre: string;
