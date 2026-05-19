@@ -99,18 +99,20 @@ export default function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
-              <Link to="/admin-approval" aria-label="Admin">
-                <ShieldCheck className="size-4" />
-                {!collapsed && <span>Admin</span>}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
+                <Link to="/admin-approval" aria-label="Admin">
+                  <ShieldCheck className="size-4" />
+                  {!collapsed && <span>Admin</span>}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Déconnexion"
-              onClick={() => { storage.logout(); navigate({ to: "/login" }); }}
+              onClick={doLogout}
               aria-label="Se déconnecter"
             >
               <LogOut className="size-4" />
