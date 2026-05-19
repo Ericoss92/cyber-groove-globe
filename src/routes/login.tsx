@@ -25,6 +25,8 @@ function LoginPage() {
 
   // If already authenticated AND authorized, jump to /
   useEffect(() => {
+    const api = cachedUser.get();
+    if (api?.authorized) { navigate({ to: "/" }); return; }
     const u = storage.currentUser();
     if (u?.authorized) navigate({ to: "/" });
   }, [navigate]);
