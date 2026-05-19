@@ -19,6 +19,7 @@ import AppSidebar from "@/components/AppSidebar";
 import { PlayerProvider } from "@/lib/player";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { storage } from "@/lib/storage";
+import { api, cachedUser, tokens } from "@/api/client";
 
 function NotFoundComponent() {
   return (
