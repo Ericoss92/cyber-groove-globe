@@ -27,6 +27,16 @@ export default function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const isActive = (path: string) => pathname === path;
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => !!cachedUser.get()?.admin);
+  useEffect(() => {
+    if (!tokens.access) { setIsAdmin(false); return; }
+    api.me().then(u => setIsAdmin(!!u.admin)).catch(() => setIsAdmin(!!cachedUser.get()?.admin));
+  }, []);
+  async function doLogout() {
+    try { await api.logout(); } catch {}
+    storage.logout();
+    navigate({ to: "/login" });
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-[color:var(--neon-green)]/20">
