@@ -1,4 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -6,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "./Logo";
 import { storage } from "@/lib/storage";
+import { api, cachedUser, tokens } from "@/api/client";
 
 const PRIMARY = [
   { title: "Accueil",       url: "/",          icon: Home },
