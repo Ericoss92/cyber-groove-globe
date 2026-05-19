@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { storage } from "@/lib/storage";
+import { cachedUser } from "@/api/client";
 import Logo from "@/components/Logo";
 import { ShieldCheck, KeyRound, UserPlus } from "lucide-react";
 
