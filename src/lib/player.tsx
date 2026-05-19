@@ -210,9 +210,27 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (crossfading.current) return; // crossfade path manages loading itself
     ensureAudioGraph();
     const a = getActive();
-    if (a.src !== current.url) {
-      a.src = current.url;
-      a.play().catch(() => setPlaying(false));
+    const primary = current.audioUrl || current.url;
+    const fallback = current.audioUrl ? current.url : null;
+    if (a.src !== primary) {
+      // One-shot fallback handler if local file 404s
+      const onErr = () => {
+        if (fallback && a.src !== fallback) {
+          console.warn(`[player] ${primary} failed, falling back to ${fallback}`);
+          a.src = fallback;
+          a.play().catch(() => setPlaying(false));
+        } else {
+          console.error(`[player] cannot play ${a.src}`);
+          setPlaying(false);
+        }
+        a.removeEventListener("error", onErr);
+      };
+      a.addEventListener("error", onErr, { once: true });
+      a.src = primary;
+      a.play().catch((e) => {
+        console.warn("[player] play() rejected", e);
+        setPlaying(false);
+      });
       storage.addRecent(current);
       logPlayToServer(current);
     }
@@ -243,7 +261,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     crossfading.current = true;
     const nextSong = queue[next];
-    inactive.src = nextSong.url;
+    inactive.src = nextSong.audioUrl || nextSong.url;
     inactive.currentTime = 0;
     inactive.play().catch(() => {});
     storage.addRecent(nextSong);

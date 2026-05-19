@@ -1,4 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -6,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "./Logo";
 import { storage } from "@/lib/storage";
+import { api, cachedUser, tokens } from "@/api/client";
 
 const PRIMARY = [
   { title: "Accueil",       url: "/",          icon: Home },
@@ -25,6 +27,16 @@ export default function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const isActive = (path: string) => pathname === path;
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => !!cachedUser.get()?.admin);
+  useEffect(() => {
+    if (!tokens.access) { setIsAdmin(false); return; }
+    api.me().then(u => setIsAdmin(!!u.admin)).catch(() => setIsAdmin(!!cachedUser.get()?.admin));
+  }, []);
+  async function doLogout() {
+    try { await api.logout(); } catch {}
+    storage.logout();
+    navigate({ to: "/login" });
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-[color:var(--neon-green)]/20">
@@ -87,18 +99,20 @@ export default function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
-              <Link to="/admin-approval" aria-label="Admin">
-                <ShieldCheck className="size-4" />
-                {!collapsed && <span>Admin</span>}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
+                <Link to="/admin-approval" aria-label="Admin">
+                  <ShieldCheck className="size-4" />
+                  {!collapsed && <span>Admin</span>}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Déconnexion"
-              onClick={() => { storage.logout(); navigate({ to: "/login" }); }}
+              onClick={doLogout}
               aria-label="Se déconnecter"
             >
               <LogOut className="size-4" />

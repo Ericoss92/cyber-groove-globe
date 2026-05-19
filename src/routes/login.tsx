@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { storage } from "@/lib/storage";
+import { cachedUser } from "@/api/client";
 import Logo from "@/components/Logo";
 import { ShieldCheck, KeyRound, UserPlus } from "lucide-react";
 
@@ -24,6 +25,8 @@ function LoginPage() {
 
   // If already authenticated AND authorized, jump to /
   useEffect(() => {
+    const api = cachedUser.get();
+    if (api?.authorized) { navigate({ to: "/" }); return; }
     const u = storage.currentUser();
     if (u?.authorized) navigate({ to: "/" });
   }, [navigate]);
@@ -117,12 +120,7 @@ function LoginPage() {
         </form>
 
         <p className="mt-6 text-[10px] font-mono text-muted-foreground text-center">
-          Plateforme privée. Tous les nouveaux comptes nécessitent une validation manuelle.
-        </p>
-        <p className="mt-2 text-center">
-          <Link to="/admin" className="text-[10px] font-mono text-[color:var(--neon-cyan)]/60 hover:text-[color:var(--neon-cyan)] underline">
-            Console admin (validation)
-          </Link>
+          Plateforme privée. Tous les nouveaux comptes nécessitent une validation manuelle par un administrateur.
         </p>
       </div>
     </div>
