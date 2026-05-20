@@ -10,6 +10,9 @@ export type JwtPayload = { sub: number; username: string; admin: boolean };
 
 export const signAccess = (p: JwtPayload) => jwt.sign(p, SECRET, { expiresIn: ACCESS_TTL });
 export const signRefresh = (p: JwtPayload) => jwt.sign(p, REFRESH, { expiresIn: REFRESH_TTL });
-export const verifyAccess = (t: string) => jwt.verify(t, SECRET) as JwtPayload & { iat: number; exp: number };
-export const verifyRefresh = (t: string) => jwt.verify(t, REFRESH) as JwtPayload & { iat: number; exp: number };
+export const verifyAccess = (t: string) =>
+  jwt.verify(t, SECRET) as unknown as JwtPayload & { iat: number; exp: number };
+
+export const verifyRefresh = (t: string) =>
+  jwt.verify(t, REFRESH) as unknown as JwtPayload & { iat: number; exp: number };
 export const tokenHash = (t: string) => crypto.createHash("sha256").update(t).digest("hex");

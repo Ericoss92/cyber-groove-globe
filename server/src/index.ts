@@ -54,4 +54,4 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT || 3001);
-app.listen(PORT, () => logger.info(`SOUNDWAVE API listening on :${PORT}`));
+app.listen(PORT, '0.0.0.0', () => logger.info(`SOUNDWAVE API listening on :${PORT}`));
