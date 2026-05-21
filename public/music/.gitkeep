@@ -1,0 +1,10 @@
+# Placeholder so the empty `/public/music` directory stays in Git.
+# Copy your real music library here on the deploy host:
+#
+#   cp -r /path/to/your/Music/* /var/www/cyber-groove-globe/public/music/
+#
+# Then regenerate the catalog:
+#
+#   cd server && npm run index-music
+#
+# Expected layout: continent/country/genre/artist/song.mp3
