@@ -44,12 +44,26 @@ function LoginPage() {
       } else {
         const r = await api.login(username, password);
         // sync local gatekeeper so existing UI keeps working
-        if (r.user.authorized) {
-          storage.setUsers([{ username: r.user.username, passwordHash: "api", authorized: true, createdAt: new Date().toISOString() }, ...storage.getUsers().filter(u => u.username !== r.user.username)]);
-          storage.setAuth({ username: r.user.username });
-          navigate({ to: "/" });
-          return;
-        }
+     	if (r.user.authorized) {
+  	cachedUser.set(r.user);
+
+  	storage.setUsers([
+    	 {
+      		username: r.user.username,
+      		passwordHash: "api",
+      		authorized: true,
+      		createdAt: new Date().toISOString(),
+    	  },
+    	...storage.getUsers().filter(
+      		(u) => u.username !== r.user.username
+    	  ),
+  	]);
+
+  	storage.setAuth({ username: r.user.username });
+
+  	window.location.href = "/";
+  	return;
+	}
         setInfo("Compte non encore validé par l'administrateur.");
         return;
       }
@@ -58,14 +72,8 @@ function LoginPage() {
       if (apiErr?.status && apiErr.status >= 400 && apiErr.status < 500) {
         setError(apiErr.message); return;
       }
-      const r = mode === "login" ? storage.login(username, password) : storage.register(username, password);
-      if (!r.ok) { setError(r.error); return; }
-      const u = storage.currentUser();
-      if (u && !u.authorized) {
-        setInfo("Compte créé localement. Accès en attente de validation administrateur.");
-        return;
-      }
-      navigate({ to: "/" });
+      setError(apiErr?.message || "Erreur API"); 
+      return;
     }
   }
 

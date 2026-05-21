@@ -5,7 +5,7 @@
  * - Auto-refreshes on 401
  */
 
-const BASE = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:3001";
+const BASE = "";
 
 const KEYS = {
   access: "sw.token",
