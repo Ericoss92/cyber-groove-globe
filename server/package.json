@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "init-db": "node --loader tsx src/database/init.ts",
+    "index-music": "tsx scripts/indexMusicFolder.ts",
     "test": "vitest run"
   },
   "dependencies": {
