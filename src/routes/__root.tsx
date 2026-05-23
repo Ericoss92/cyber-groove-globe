@@ -103,9 +103,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     async function check() {
       // Fast path: cached user from API
       let user = cachedUser.get();
-      // Verify with /me when we have a token, but never block on it
+      // Verify with /me when we have a token. If 401 → session expirée: purge + redirect.
       if (tokens.access) {
-        api.me().then((u) => { if (!cancelled) cachedUser.set(u); }).catch(() => {});
+        api.me()
+          .then((u) => { if (!cancelled) cachedUser.set(u); })
+          .catch((err: any) => {
+            if (cancelled) return;
+            if (err?.status === 401) {
+              tokens.clear();
+              cachedUser.set(null);
+              try { sessionStorage.setItem("sw.flash", "Session expirée. Reconnectez-vous."); } catch {}
+              navigate({ to: "/login", replace: true });
+            }
+          });
       }
       // Offline fallback
       if (!user) {

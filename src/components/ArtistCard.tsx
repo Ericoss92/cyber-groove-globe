@@ -11,7 +11,7 @@ export default function ArtistCard({ artist }: { artist: TopArtistRow }) {
       params={{ slug: artist.slug }}
       className="group block rounded-xl glass p-3 hover:scale-[1.03] transition text-center"
     >
-      <div className="relative mx-auto size-28 rounded-full overflow-hidden mb-2 ring-1 ring-[color:var(--neon-pink)]/30 group-hover:ring-[color:var(--neon-pink)] transition">
+      <div className="relative mx-auto size-20 sm:size-24 md:size-28 rounded-full overflow-hidden mb-2 ring-1 ring-[color:var(--neon-pink)]/30 group-hover:ring-[color:var(--neon-pink)] transition">
         <img src={img} alt="" loading="lazy" className="size-full object-cover" />
       </div>
       <div className="truncate font-semibold text-sm">{artist.name}</div>
