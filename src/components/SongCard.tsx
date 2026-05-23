@@ -12,7 +12,7 @@ export default function SongCard({ song, queue }: { song: Song; queue?: Song[] }
     p.playQueue(q, idx);
   };
   return (
-    <div className="group relative w-44 shrink-0 rounded-xl glass p-3 hover:scale-[1.03] transition">
+    <div className="group relative w-36 sm:w-40 md:w-44 shrink-0 rounded-xl glass p-2 sm:p-3 hover:scale-[1.03] transition">
       <button onClick={onPlay} aria-label={`Lire ${song.title}`} className="block w-full">
         <div className="relative aspect-square rounded-lg overflow-hidden mb-2">
           <img src={song.cover} alt="" loading="lazy" className="size-full object-cover" />

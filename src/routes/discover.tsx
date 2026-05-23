@@ -49,7 +49,7 @@ function DiscoverPage() {
             {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
         ) : data?.recent.length ? (
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+          <div className="flex flex-col sm:flex-row gap-3 overflow-x-auto sm:overflow-x-auto pb-2 snap-y sm:snap-x snap-mandatory">
             {data.recent.map(s => (
               <div key={s.id} className="snap-start"><SongCard song={s} queue={data.recent} /></div>
             ))}
@@ -87,7 +87,7 @@ function DiscoverPage() {
             {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
         ) : data?.suggestions.length ? (
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+          <div className="flex flex-col sm:flex-row gap-3 overflow-x-auto pb-2 snap-y sm:snap-x snap-mandatory">
             {data.suggestions.map(s => (
               <div key={s.id} className="snap-start"><SongCard song={s} queue={data.suggestions} /></div>
             ))}

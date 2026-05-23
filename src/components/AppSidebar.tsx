@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck, Compass } from "lucide-react";
+import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck, Compass, User, BarChart3 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -93,6 +93,14 @@ export default function AppSidebar() {
       <SidebarFooter className="border-t border-[color:var(--neon-green)]/15 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/profile")} tooltip="Profil">
+              <Link to="/profile" aria-label="Profil">
+                <User className="size-4" />
+                {!collapsed && <span>Profil</span>}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={isActive("/settings")} tooltip="Paramètres">
               <Link to="/settings" aria-label="Paramètres">
                 <SettingsIcon className="size-4" />
@@ -101,14 +109,24 @@ export default function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           {isAdmin && (
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
-                <Link to="/admin-approval" aria-label="Admin">
-                  <ShieldCheck className="size-4" />
-                  {!collapsed && <span>Admin</span>}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/admin-approval")} tooltip="Admin">
+                  <Link to="/admin-approval" aria-label="Admin">
+                    <ShieldCheck className="size-4" />
+                    {!collapsed && <span>Admin</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/admin-stats")} tooltip="Analytics">
+                  <Link to="/admin-stats" aria-label="Analytics">
+                    <BarChart3 className="size-4" />
+                    {!collapsed && <span>Analytics</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
           )}
           <SidebarMenuItem>
             <SidebarMenuButton
