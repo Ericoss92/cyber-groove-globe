@@ -1,0 +1,151 @@
+import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { User as UserIcon, LogOut, Save } from "lucide-react";
+import { api, cachedUser, tokens } from "@/api/client";
+import { useProfile } from "@/hooks/useProfile";
+import { useStats } from "@/hooks/useStats";
+import { storage } from "@/lib/storage";
+
+export const Route = createFileRoute("/profile")({
+  head: () => ({ meta: [{ title: "Profil · SOUNDWAVE" }] }),
+  component: ProfilePage,
+});
+
+function ProfilePage() {
+  const u = cachedUser.get();
+  if (!u?.authorized) return <Navigate to="/login" />;
+
+  const navigate = useNavigate();
+  const { data: profile, loading, error, refresh } = useProfile();
+  const { data: stats } = useStats();
+
+  const [volume, setVolume] = useState(75);
+  const [crossfade, setCrossfade] = useState(3);
+  const [gapless, setGapless] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!profile) return;
+    setVolume(Math.round((profile.volume ?? 0.75) * 100));
+    setCrossfade(profile.crossfade_duration ?? 3);
+    setGapless(!!profile.gapless_playback);
+  }, [profile]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await api.updatePreferences({
+        volume: volume / 100,
+        crossfade_duration: crossfade,
+        gapless_playback: gapless,
+      });
+      setSavedAt(new Date().toLocaleTimeString());
+      refresh();
+    } catch (e: any) {
+      alert(e?.message || "Erreur sauvegarde");
+    } finally { setSaving(false); }
+  }
+
+  async function logout() {
+    try { await api.logout(); } catch {}
+    tokens.clear();
+    storage.logout();
+    navigate({ to: "/login" });
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 md:px-6 py-8 space-y-6">
+      <header className="flex items-center gap-3">
+        <UserIcon className="size-7 text-[color:var(--neon-pink)]" />
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[color:var(--neon-cyan)]">// ACCOUNT</p>
+          <h1 className="font-display text-3xl md:text-4xl glow-pink">Mon profil</h1>
+        </div>
+      </header>
+
+      {error && <div className="rounded-lg border border-[color:var(--neon-pink)]/40 p-3 text-sm font-mono text-[color:var(--neon-pink)]">// {error}</div>}
+
+      {/* INFOS COMPTE */}
+      <section className="glass rounded-xl p-5 space-y-2">
+        <h2 className="font-display text-lg glow-green mb-2">Infos compte</h2>
+        {loading ? <p className="text-sm font-mono text-muted-foreground">chargement…</p> : (
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Username</dt><dd>{profile?.username ?? u.username}</dd></div>
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Email</dt><dd className="truncate">{profile?.email ?? "—"}</dd></div>
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Créé le</dt><dd>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "—"}</dd></div>
+            <div>
+              <dt className="font-mono text-[10px] text-muted-foreground uppercase">Statut</dt>
+              <dd>
+                {profile?.authorized
+                  ? <span className="text-[color:var(--neon-green)]">✅ Autorisé</span>
+                  : <span className="text-[color:var(--neon-pink)]">⏳ En attente</span>}
+                {profile?.is_admin && <span className="ml-2 text-[color:var(--neon-cyan)]">· admin</span>}
+              </dd>
+            </div>
+          </dl>
+        )}
+      </section>
+
+      {/* PRÉFÉRENCES */}
+      <section className="glass rounded-xl p-5 space-y-4">
+        <h2 className="font-display text-lg glow-cyan">Préférences audio</h2>
+
+        <div>
+          <label className="flex justify-between text-sm font-mono">
+            <span>Volume par défaut</span><span>{volume}%</span>
+          </label>
+          <input type="range" min={0} max={100} value={volume} onChange={(e) => setVolume(Number(e.target.value))}
+            className="w-full accent-[color:var(--neon-green)]" />
+        </div>
+
+        <div>
+          <label className="flex justify-between text-sm font-mono">
+            <span>Crossfade</span><span>{crossfade}s</span>
+          </label>
+          <input type="range" min={0} max={10} step={0.5} value={crossfade} onChange={(e) => setCrossfade(Number(e.target.value))}
+            className="w-full accent-[color:var(--neon-pink)]" />
+        </div>
+
+        <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
+          <input type="checkbox" checked={gapless} onChange={(e) => setGapless(e.target.checked)}
+            className="accent-[color:var(--neon-cyan)]" />
+          Lecture sans coupure (gapless)
+        </label>
+
+        <div className="flex items-center gap-3">
+          <button onClick={save} disabled={saving}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[color:var(--neon-green)] text-[color:var(--background)] text-sm font-medium hover:scale-105 transition disabled:opacity-60">
+            <Save className="size-4" /> {saving ? "Sauvegarde…" : "Sauvegarder"}
+          </button>
+          {savedAt && <span className="text-xs font-mono text-[color:var(--neon-green)]">// enregistré {savedAt}</span>}
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section className="glass rounded-xl p-5 space-y-2">
+        <h2 className="font-display text-lg glow-pink mb-2">Mes statistiques</h2>
+        {stats ? (
+          <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Écoutes</dt><dd>{stats.totalSongsPlayed}</dd></div>
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Durée</dt><dd>{Math.floor(stats.totalListeningTimeMinutes / 60)}h {stats.totalListeningTimeMinutes % 60}min</dd></div>
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Artiste favori</dt><dd className="truncate">{stats.favoriteArtist ?? "—"}</dd></div>
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Genre favori</dt><dd className="truncate">{stats.favoriteGenre ?? "—"}</dd></div>
+            <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Pays favori</dt><dd className="truncate">{stats.favoriteCountry ?? "—"}</dd></div>
+          </dl>
+        ) : <p className="text-sm font-mono text-muted-foreground">// pas encore d'écoute</p>}
+      </section>
+
+      {/* SÉCURITÉ */}
+      <section className="glass rounded-xl p-5 space-y-3">
+        <h2 className="font-display text-lg glow-green">Sécurité</h2>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={logout}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-[color:var(--neon-pink)]/50 text-sm hover:bg-[color:var(--neon-pink)]/10">
+            <LogOut className="size-4" /> Se déconnecter
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
