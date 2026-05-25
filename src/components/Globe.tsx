@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
-// @ts-expect-error - three-globe ships its own ambient types
 import ThreeGlobe from "three-globe";
 import { useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
@@ -79,6 +78,7 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
     scene.add(rim);
 
     // Globe
+    // three-globe expose des accessors typés `object` — on cast vers GlobePoint
     const globe = new ThreeGlobe()
       .globeImageUrl(EARTH_LOCAL)
       .bumpImageUrl(BUMP_URL)
@@ -86,22 +86,25 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       .atmosphereColor("#3aa6ff")
       .atmosphereAltitude(0.18)
       .pointsData(points)
-      .pointLat((d: GlobePoint) => d.lat)
-      .pointLng((d: GlobePoint) => d.lng)
+      .pointLat((d: object) => (d as GlobePoint).lat)
+      .pointLng((d: object) => (d as GlobePoint).lng)
       .pointColor(() => "#00ff66")
       .pointAltitude(0.02)
       .pointRadius(0.55)
       .pointsMerge(false)
-      .pointLabel(
-        (d: GlobePoint) =>
-          `<div style="padding:6px 10px;background:rgba(5,10,25,.92);border:1px solid #00ff66;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#e8f0ff">
-             <strong style="color:#00ff66">${d.name}</strong> · ${d.count} artistes
-           </div>`,
-      )
-      .onPointClick((d: unknown) => {
+      .pointsTransitionDuration(0)
+      .onPointClick((d: object) => {
         const p = d as GlobePoint;
         navigate({ to: "/country/$country", params: { country: p.name } });
       });
+    // Label HTML via la méthode commune (typings absents)
+    (globe as unknown as { pointLabel: (fn: (d: object) => string) => void })
+      .pointLabel(
+        (d: object) => {
+          const p = d as GlobePoint;
+          return `<div style="padding:6px 10px;background:rgba(5,10,25,.92);border:1px solid #00ff66;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#e8f0ff"><strong style="color:#00ff66">${p.name}</strong> · ${p.count} artistes</div>`;
+        },
+      );
 
     // Fallback si la texture locale échoue (404)
     const probe = new Image();
