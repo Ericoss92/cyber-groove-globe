@@ -94,20 +94,6 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       .pointsMerge(false)
       .pointsTransitionDuration(0);
 
-    // Méthodes non typées dans le .d.ts fourni — accès via cast
-    const g = globe as unknown as {
-      pointLabel: (fn: (d: object) => string) => void;
-      onPointClick: (fn: (d: object) => void) => void;
-    };
-    g.pointLabel((d: object) => {
-      const p = d as GlobePoint;
-      return `<div style="padding:6px 10px;background:rgba(5,10,25,.92);border:1px solid #00ff66;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#e8f0ff"><strong style="color:#00ff66">${p.name}</strong> · ${p.count} artistes</div>`;
-    });
-    g.onPointClick((d: object) => {
-      const p = d as GlobePoint;
-      navigate({ to: "/country/$country", params: { country: p.name } });
-    });
-
     // Fallback si la texture locale échoue (404)
     const probe = new Image();
     probe.onerror = () => globe.globeImageUrl(EARTH_FALLBACK);
