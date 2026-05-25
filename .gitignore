@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local music library - do not push 20GB music folder
+/public/music/*
+!/public/music/.gitkeep
