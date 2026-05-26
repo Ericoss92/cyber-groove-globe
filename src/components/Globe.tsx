@@ -116,20 +116,60 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
 
     scene.add(globe);
 
-    // ---- Interactions custom (drag + wheel + auto-rotate) ----
+    // ---- Interactions custom (drag + wheel + auto-rotate + click) ----
     let isDragging = false;
+    let downX = 0,
+      downY = 0;
     let lastX = 0,
       lastY = 0;
     let velX = 0,
       velY = 0;
     let lastInteract = performance.now();
-    const ROT_SPEED = 0.0008; // auto-rotation lente
+    const ROT_SPEED = 0.0008;
 
     const el = renderer.domElement;
     el.style.cursor = "grab";
 
+    // Raycaster — three-globe exposes points via globe.children meshes,
+    // but the simplest robust path is to raycast against the entire globe
+    // subtree and resolve back to the nearest GlobePoint by lat/lng.
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+
+    /** Resolve a screen-space click to the nearest country point, if hit. */
+    const pickCountry = (clientX: number, clientY: number): GlobePoint | null => {
+      const rect = el.getBoundingClientRect();
+      ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObject(globe, true);
+      if (!hits.length) return null;
+      // Convert the hit world-point back to lat/lng and match nearest point
+      const hitWorld = hits[0].point.clone();
+      globe.worldToLocal(hitWorld);
+      const radius = hitWorld.length();
+      if (radius === 0) return null;
+      const lat = 90 - (Math.acos(hitWorld.y / radius) * 180) / Math.PI;
+      const lng = (Math.atan2(hitWorld.z, -hitWorld.x) * 180) / Math.PI;
+      let best: GlobePoint | null = null;
+      let bestD = Infinity;
+      for (const p of points) {
+        const dLat = p.lat - lat;
+        const dLng = p.lng - lng;
+        const d = dLat * dLat + dLng * dLng;
+        if (d < bestD) {
+          bestD = d;
+          best = p;
+        }
+      }
+      // ~7° tolerance
+      return best && bestD < 50 ? best : null;
+    };
+
     const onDown = (e: PointerEvent) => {
       isDragging = true;
+      downX = e.clientX;
+      downY = e.clientY;
       lastX = e.clientX;
       lastY = e.clientY;
       el.style.cursor = "grabbing";
@@ -150,12 +190,19 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       lastY = e.clientY;
       lastInteract = performance.now();
     };
-    const onUp = () => {
+    const onUp = (e: PointerEvent) => {
+      const wasClick =
+        Math.abs(e.clientX - downX) < 4 && Math.abs(e.clientY - downY) < 4;
       isDragging = false;
       el.style.cursor = "grab";
+      // Country click — only in expanded mode (compact mode = open fullscreen)
+      if (wasClick && innerExpanded.current) {
+        const p = pickCountry(e.clientX, e.clientY);
+        if (p) navigate({ to: "/country/$country", params: { country: p.name } });
+      }
     };
     const onWheel = (e: WheelEvent) => {
-      if (!innerExpanded.current) return; // pas de zoom en mode compact
+      if (!innerExpanded.current) return;
       e.preventDefault();
       camera.position.z = Math.max(
         140,
@@ -168,6 +215,7 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     el.addEventListener("wheel", onWheel, { passive: false });
+
 
     // Resize observer — suit le container
     const resize = () => {
