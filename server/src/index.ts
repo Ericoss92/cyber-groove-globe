@@ -11,6 +11,7 @@ import { playlistRouter } from "./routes/playlists.js";
 import { favoritesRouter } from "./routes/favorites.js";
 import { historyRouter } from "./routes/history.js";
 import { adminRouter } from "./routes/admin.js";
+import { artistsRouter } from "./routes/artists.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import { logger } from "./utils/logger.js";
