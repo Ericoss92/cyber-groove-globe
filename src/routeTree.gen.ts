@@ -23,6 +23,7 @@ import { Route as AdminApprovalRouteImport } from './routes/admin-approval'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCountryRouteImport } from './routes/country.$country'
 import { Route as ArtistSlugRouteImport } from './routes/artist.$slug'
+import { Route as AdminArtistsSlugRouteImport } from './routes/admin-artists.$slug'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -94,11 +95,16 @@ const ArtistSlugRoute = ArtistSlugRouteImport.update({
   path: '/artist/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminArtistsSlugRoute = AdminArtistsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AdminArtistsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
-  '/admin-artists': typeof AdminArtistsRoute
+  '/admin-artists': typeof AdminArtistsRouteWithChildren
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -108,13 +114,14 @@ export interface FileRoutesByFullPath {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/admin-artists/$slug': typeof AdminArtistsSlugRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
-  '/admin-artists': typeof AdminArtistsRoute
+  '/admin-artists': typeof AdminArtistsRouteWithChildren
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/admin-artists/$slug': typeof AdminArtistsSlugRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
@@ -131,7 +139,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
-  '/admin-artists': typeof AdminArtistsRoute
+  '/admin-artists': typeof AdminArtistsRouteWithChildren
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/admin-artists/$slug': typeof AdminArtistsSlugRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/admin-artists/$slug'
     | '/artist/$slug'
     | '/country/$country'
   fileRoutesByTo: FileRoutesByTo
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/admin-artists/$slug'
     | '/artist/$slug'
     | '/country/$country'
   id:
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/admin-artists/$slug'
     | '/artist/$slug'
     | '/country/$country'
   fileRoutesById: FileRoutesById
@@ -198,7 +210,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminApprovalRoute: typeof AdminApprovalRoute
-  AdminArtistsRoute: typeof AdminArtistsRoute
+  AdminArtistsRoute: typeof AdminArtistsRouteWithChildren
   AdminStatsRoute: typeof AdminStatsRoute
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
@@ -312,13 +324,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArtistSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-artists/$slug': {
+      id: '/admin-artists/$slug'
+      path: '/$slug'
+      fullPath: '/admin-artists/$slug'
+      preLoaderRoute: typeof AdminArtistsSlugRouteImport
+      parentRoute: typeof AdminArtistsRoute
+    }
   }
 }
+
+interface AdminArtistsRouteChildren {
+  AdminArtistsSlugRoute: typeof AdminArtistsSlugRoute
+}
+
+const AdminArtistsRouteChildren: AdminArtistsRouteChildren = {
+  AdminArtistsSlugRoute: AdminArtistsSlugRoute,
+}
+
+const AdminArtistsRouteWithChildren = AdminArtistsRoute._addFileChildren(
+  AdminArtistsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminApprovalRoute: AdminApprovalRoute,
-  AdminArtistsRoute: AdminArtistsRoute,
+  AdminArtistsRoute: AdminArtistsRouteWithChildren,
   AdminStatsRoute: AdminStatsRoute,
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,
