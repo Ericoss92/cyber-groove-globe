@@ -219,11 +219,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const a = getActive();
     const primary = current.audioUrl || current.url;
     const fallback = current.audioUrl ? current.url : null;
-    if (a.src !== primary) {
-      // One-shot fallback handler if local file 404s
+    // Compare against the *tracked* loaded key, not a.src (which the browser
+    // resolves to an absolute URL and would never equal a relative path).
+    const key = activeKey.current;
+    if (loadedSrc.current[key] !== primary) {
       const onErr = () => {
-        if (fallback && a.src !== fallback) {
+        if (fallback && loadedSrc.current[key] !== fallback) {
           console.warn(`[player] ${primary} failed, falling back to ${fallback}`);
+          loadedSrc.current[key] = fallback;
           a.src = fallback;
           a.play().catch(() => setPlaying(false));
         } else {
@@ -233,6 +236,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         a.removeEventListener("error", onErr);
       };
       a.addEventListener("error", onErr, { once: true });
+      loadedSrc.current[key] = primary;
       a.src = primary;
       a.play().catch((e) => {
         console.warn("[player] play() rejected", e);
@@ -242,6 +246,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       logPlayToServer(current);
     }
   }, [current, ensureAudioGraph]);
+
 
   function pickNextIndex(): number | null {
     if (queue.length === 0) return null;
