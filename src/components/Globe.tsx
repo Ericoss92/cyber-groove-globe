@@ -274,7 +274,8 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
 
   // --- Rendu ---
   const compactClasses =
-    "relative w-full h-full rounded-2xl overflow-hidden cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.02] box-glow-green";
+    "relative w-full h-full overflow-hidden cursor-pointer transition-[filter] duration-500 ease-out hover:[filter:drop-shadow(0_0_24px_color-mix(in_oklab,var(--neon-green)_50%,transparent))]";
+
   const expandedClasses = "relative w-full h-full";
 
   if (isExpanded) {
