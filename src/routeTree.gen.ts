@@ -18,10 +18,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AdminStatsRouteImport } from './routes/admin-stats'
+import { Route as AdminArtistsRouteImport } from './routes/admin-artists'
 import { Route as AdminApprovalRouteImport } from './routes/admin-approval'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCountryRouteImport } from './routes/country.$country'
 import { Route as ArtistSlugRouteImport } from './routes/artist.$slug'
+import { Route as AdminArtistsSlugRouteImport } from './routes/admin-artists.$slug'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -68,6 +70,11 @@ const AdminStatsRoute = AdminStatsRouteImport.update({
   path: '/admin-stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminArtistsRoute = AdminArtistsRouteImport.update({
+  id: '/admin-artists',
+  path: '/admin-artists',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminApprovalRoute = AdminApprovalRouteImport.update({
   id: '/admin-approval',
   path: '/admin-approval',
@@ -88,10 +95,16 @@ const ArtistSlugRoute = ArtistSlugRouteImport.update({
   path: '/artist/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminArtistsSlugRoute = AdminArtistsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AdminArtistsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
+  '/admin-artists': typeof AdminArtistsRouteWithChildren
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -101,12 +114,14 @@ export interface FileRoutesByFullPath {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/admin-artists/$slug': typeof AdminArtistsSlugRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
+  '/admin-artists': typeof AdminArtistsRouteWithChildren
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -116,6 +131,7 @@ export interface FileRoutesByTo {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/admin-artists/$slug': typeof AdminArtistsSlugRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
@@ -123,6 +139,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
+  '/admin-artists': typeof AdminArtistsRouteWithChildren
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -132,6 +149,7 @@ export interface FileRoutesById {
   '/recent': typeof RecentRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/admin-artists/$slug': typeof AdminArtistsSlugRoute
   '/artist/$slug': typeof ArtistSlugRoute
   '/country/$country': typeof CountryCountryRoute
 }
@@ -140,6 +158,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin-approval'
+    | '/admin-artists'
     | '/admin-stats'
     | '/discover'
     | '/favorites'
@@ -149,12 +168,14 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/admin-artists/$slug'
     | '/artist/$slug'
     | '/country/$country'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin-approval'
+    | '/admin-artists'
     | '/admin-stats'
     | '/discover'
     | '/favorites'
@@ -164,12 +185,14 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/admin-artists/$slug'
     | '/artist/$slug'
     | '/country/$country'
   id:
     | '__root__'
     | '/'
     | '/admin-approval'
+    | '/admin-artists'
     | '/admin-stats'
     | '/discover'
     | '/favorites'
@@ -179,6 +202,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/search'
     | '/settings'
+    | '/admin-artists/$slug'
     | '/artist/$slug'
     | '/country/$country'
   fileRoutesById: FileRoutesById
@@ -186,6 +210,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminApprovalRoute: typeof AdminApprovalRoute
+  AdminArtistsRoute: typeof AdminArtistsRouteWithChildren
   AdminStatsRoute: typeof AdminStatsRoute
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
@@ -264,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-artists': {
+      id: '/admin-artists'
+      path: '/admin-artists'
+      fullPath: '/admin-artists'
+      preLoaderRoute: typeof AdminArtistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-approval': {
       id: '/admin-approval'
       path: '/admin-approval'
@@ -292,12 +324,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArtistSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-artists/$slug': {
+      id: '/admin-artists/$slug'
+      path: '/$slug'
+      fullPath: '/admin-artists/$slug'
+      preLoaderRoute: typeof AdminArtistsSlugRouteImport
+      parentRoute: typeof AdminArtistsRoute
+    }
   }
 }
+
+interface AdminArtistsRouteChildren {
+  AdminArtistsSlugRoute: typeof AdminArtistsSlugRoute
+}
+
+const AdminArtistsRouteChildren: AdminArtistsRouteChildren = {
+  AdminArtistsSlugRoute: AdminArtistsSlugRoute,
+}
+
+const AdminArtistsRouteWithChildren = AdminArtistsRoute._addFileChildren(
+  AdminArtistsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminApprovalRoute: AdminApprovalRoute,
+  AdminArtistsRoute: AdminArtistsRouteWithChildren,
   AdminStatsRoute: AdminStatsRoute,
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,

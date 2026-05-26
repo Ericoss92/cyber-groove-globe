@@ -31,6 +31,14 @@ const prefSchema = z.object({
   low_perf_mode: z.boolean().optional(),
 });
 
+userRouter.get("/preferences", requireAuth, async (req, res, next) => {
+  try {
+    await exec(`INSERT IGNORE INTO user_preferences (user_id) VALUES (?)`, [req.user!.sub]);
+    const prefs = await queryOne(`SELECT * FROM user_preferences WHERE user_id = ?`, [req.user!.sub]);
+    res.json(prefs);
+  } catch (e) { next(e); }
+});
+
 userRouter.put("/preferences", requireAuth, async (req, res, next) => {
   try {
     const data = prefSchema.parse(req.body);

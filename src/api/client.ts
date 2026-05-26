@@ -114,6 +114,7 @@ export const api = {
 
   // ---------- USER ----------
   getProfile: () => request("GET", "/api/user/profile"),
+  getPreferences: () => request("GET", "/api/user/preferences"),
   updatePreferences: (prefs: any) => request("PUT", "/api/user/preferences", prefs),
   getStats: () => request("GET", "/api/user/stats"),
 
@@ -142,8 +143,17 @@ export const api = {
   logPlay: (data: any) => request("POST", "/api/history/log", data),
   history: (limit = 50, offset = 0) =>
     request("GET", `/api/history?limit=${limit}&offset=${offset}`),
-  topArtists: (period: "week" | "month" | "all" = "all", limit = 10) =>
+  topArtists: (period: "day" | "week" | "month" | "year" | "all" = "all", limit = 10) =>
     request("GET", `/api/history/top-artists?period=${period}&limit=${limit}`),
+  topGenres: (period: "day" | "week" | "month" | "year" | "all" = "all", country?: string, limit = 10) => {
+    const q = new URLSearchParams({ period, limit: String(limit) });
+    if (country) q.set("country", country);
+    return request("GET", `/api/history/top-genres?${q.toString()}`);
+  },
+
+  // ---------- ARTIST METADATA (public read) ----------
+  getArtistMeta: (slug: string) =>
+    request<any>("GET", `/api/artists/${encodeURIComponent(slug)}`),
 
   // ---------- ADMIN ----------
   adminUsers: (status: "pending" | "authorized" | "all" = "all") =>
@@ -154,6 +164,13 @@ export const api = {
     request("DELETE", `/api/admin/users/${userId}`, { reason }),
   adminStats: () => request("GET", `/api/admin/stats`),
   adminLogs: (limit = 50) => request("GET", `/api/admin/logs?limit=${limit}`),
+
+  // ---------- ADMIN: ARTIST METADATA ----------
+  adminListArtists: () => request<any[]>("GET", `/api/admin/artists`),
+  adminGetArtist: (slug: string) =>
+    request<any>("GET", `/api/admin/artists/${encodeURIComponent(slug)}`),
+  adminUpdateArtist: (slug: string, data: any) =>
+    request("PUT", `/api/admin/artists/${encodeURIComponent(slug)}`, data),
 };
 
 export const API_URL = BASE;

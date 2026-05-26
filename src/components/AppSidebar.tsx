@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Home, Search, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck, Compass, User, BarChart3 } from "lucide-react";
+import { Home, Library, ListMusic, Heart, Clock, Settings as SettingsIcon, LogOut, ShieldCheck, Compass, User, BarChart3, UserCog } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -12,7 +12,6 @@ import { api, cachedUser, tokens } from "@/api/client";
 const PRIMARY = [
   { title: "Accueil",       url: "/",          icon: Home },
   { title: "Découverte",    url: "/discover",  icon: Compass },
-  { title: "Recherche",     url: "/search",    icon: Search },
   { title: "Bibliothèque",  url: "/favorites", icon: Library },
 ];
 
@@ -115,6 +114,14 @@ export default function AppSidebar() {
                   <Link to="/admin-approval" aria-label="Admin">
                     <ShieldCheck className="size-4" />
                     {!collapsed && <span>Admin</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/admin-artists")} tooltip="Artistes">
+                  <Link to="/admin-artists" aria-label="Édition artistes">
+                    <UserCog className="size-4" />
+                    {!collapsed && <span>Artistes</span>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

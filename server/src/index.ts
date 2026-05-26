@@ -11,6 +11,7 @@ import { playlistRouter } from "./routes/playlists.js";
 import { favoritesRouter } from "./routes/favorites.js";
 import { historyRouter } from "./routes/history.js";
 import { adminRouter } from "./routes/admin.js";
+import { artistsRouter } from "./routes/artists.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import { logger } from "./utils/logger.js";
@@ -49,6 +50,7 @@ app.use("/api/playlists", playlistRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/history", historyRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/artists", artistsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

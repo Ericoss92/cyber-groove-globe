@@ -89,3 +89,27 @@ historyRouter.get("/by-country", requireAuth, async (req, res, next) => {
     res.json(rows);
   } catch (e) { next(e); }
 });
+
+/** Global top-genres with optional period + country filter. */
+historyRouter.get("/top-genres", requireAuth, async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 10, 50);
+    const period = String(req.query.period || "all");
+    const country = req.query.country ? String(req.query.country) : null;
+    const periodWhere = period === "day" ? "AND played_at >= NOW() - INTERVAL 1 DAY"
+                      : period === "week" ? "AND played_at >= NOW() - INTERVAL 7 DAY"
+                      : period === "month" ? "AND played_at >= NOW() - INTERVAL 30 DAY"
+                      : period === "year" ? "AND played_at >= NOW() - INTERVAL 365 DAY"
+                      : "";
+    const countryWhere = country ? "AND artist_country = ?" : "";
+    const params: any[] = country ? [country, limit] : [limit];
+    const rows = await query(
+      `SELECT genre AS name, COUNT(*) AS count
+         FROM listening_history
+        WHERE genre IS NOT NULL ${periodWhere} ${countryWhere}
+        GROUP BY genre ORDER BY count DESC LIMIT ?`,
+      params,
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
