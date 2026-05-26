@@ -68,15 +68,22 @@ export default function PlayerBar() {
               <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
             </IconBtn>
             <IconBtn onClick={() => setAddOpen(true)} label="Ajouter à une playlist"><Plus className="size-4" /></IconBtn>
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 w-40">
               <button onClick={p.toggleMute} aria-label="Muet" className="text-muted-foreground hover:text-[color:var(--neon-cyan)]">
                 {p.muted || p.volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
               </button>
-              <input type="range" min={0} max={1} step={0.01} value={p.muted ? 0 : p.volume}
-                onChange={(e) => p.setVolume(parseFloat(e.target.value))}
-                aria-label="Volume"
-                className="w-24 accent-[color:var(--neon-cyan)]" />
+              <CustomSlider
+                value={p.muted ? 0 : p.volume}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => p.setVolume(v)}
+                color="cyan"
+                showValue={false}
+                ariaLabel="Volume"
+              />
             </div>
+
             <IconBtn onClick={() => p.setExpanded(true)} label="Plein écran"><Maximize2 className="size-4" /></IconBtn>
           </div>
         </div>
