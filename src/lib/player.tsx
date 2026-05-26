@@ -80,6 +80,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const masterGain = useRef<GainNode | null>(null);
   const activeKey = useRef<"A" | "B">("A");
   const crossfading = useRef(false);
+  // Tracks the *resolved* src last loaded on each element. Used to avoid
+  // reloading (and thus restarting) a song that's already playing after a
+  // crossfade swap — without this, the `current` effect compares
+  // `a.src` (absolute, resolved by the browser) to the raw audioUrl
+  // (often a relative path), they differ, and the song restarts at 0.
+  const loadedSrc = useRef<{ A: string | null; B: string | null }>({ A: null, B: null });
 
   if (typeof window !== "undefined" && !audioA.current) {
     audioA.current = new Audio();
@@ -89,6 +95,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     audioA.current.crossOrigin = "anonymous";
     audioB.current.crossOrigin = "anonymous";
   }
+
 
   const [queue, setQueue] = useState<Song[]>([]);
   const [index, setIndex] = useState(0);
