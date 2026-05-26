@@ -1,10 +1,12 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { User as UserIcon, LogOut, Save } from "lucide-react";
+import { User as UserIcon, LogOut, Save, Volume2, Wind } from "lucide-react";
 import { api, cachedUser, tokens } from "@/api/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useStats } from "@/hooks/useStats";
 import { storage } from "@/lib/storage";
+import { CustomSlider } from "@/components/CustomSlider";
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profil · SOUNDWAVE" }] }),
