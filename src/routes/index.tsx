@@ -92,36 +92,35 @@ function Index() {
 
           {/* === GLOBE COMPACT (droite desktop / dessous mobile) === */}
           <aside className="lg:sticky lg:top-6">
-            <div className="glass rounded-2xl p-3 box-glow-green">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[color:var(--neon-green)]">
-                    // LIVE NETWORK
-                  </p>
-                  <h2 className="font-display text-lg glow-green">
-                    Le globe musical
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setGlobeExpanded(true)}
-                  aria-label="Agrandir le globe"
-                  className="size-9 rounded-full border border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] hover:bg-[color:var(--neon-cyan)] hover:text-[color:var(--background)] transition flex items-center justify-center"
-                >
-                  <Maximize2 className="size-4" />
-                </button>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[color:var(--neon-green)]">
+                  // LIVE NETWORK
+                </p>
+                <h2 className="font-display text-lg glow-green">
+                  Le globe musical
+                </h2>
               </div>
-              {/* Compact : 300px mobile, 75vh desktop */}
-              <div className="h-[300px] lg:h-[75vh]">
-                <Globe
-                  expanded={globeExpanded}
-                  onExpandedChange={setGlobeExpanded}
-                />
-              </div>
-              <p className="text-center text-[11px] font-mono text-muted-foreground mt-2">
-                Clic / touche pour agrandir
-              </p>
+              <button
+                onClick={() => setGlobeExpanded(true)}
+                aria-label="Agrandir le globe"
+                className="size-9 rounded-full border border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] hover:bg-[color:var(--neon-cyan)] hover:text-[color:var(--background)] transition flex items-center justify-center"
+              >
+                <Maximize2 className="size-4" />
+              </button>
             </div>
+            {/* Globe nu — pas de bloc englobant, juste la sphère */}
+            <div className="h-[300px] lg:h-[75vh]">
+              <Globe
+                expanded={globeExpanded}
+                onExpandedChange={setGlobeExpanded}
+              />
+            </div>
+            <p className="text-center text-[11px] font-mono text-muted-foreground mt-2">
+              Clic pour explorer · drag pour tourner
+            </p>
           </aside>
+
         </div>
       </section>
     </div>
