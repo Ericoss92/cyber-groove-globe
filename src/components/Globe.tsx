@@ -93,20 +93,18 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       .pointsMerge(false)
       .pointsTransitionDuration(0);
 
-    // Hover label + click navigation (typed accessors not in d.ts)
-    (globe as unknown as {
-      pointLabel: (fn: (d: object) => string) => unknown;
-      onPointClick: (fn: (d: object) => void) => unknown;
-    }).pointLabel((d: object) => {
-      const p = d as GlobePoint;
-      return `<div style="background:rgba(10,14,39,0.92);border:1px solid #00ff66;padding:6px 10px;border-radius:6px;font-family:monospace;color:#fff;font-size:12px"><b style="color:#00ff66">${p.name}</b><br/><span style="color:#00d4ff">${p.count} artiste${p.count > 1 ? "s" : ""}</span></div>`;
-    });
-    (globe as unknown as {
-      onPointClick: (fn: (d: object) => void) => unknown;
-    }).onPointClick((d: object) => {
-      const p = d as GlobePoint;
-      navigate({ to: "/country/$country", params: { country: p.name } });
-    });
+    // NOTE — three-globe@2.45.2 does NOT expose pointLabel/onPointClick.
+    // Calling them crashes the homepage. Hover/click handled via raycaster
+    // + a custom tooltip below. Guarded just in case a future version adds them.
+    const g = globe as unknown as Record<string, unknown>;
+    if (typeof g.pointLabel === "function") {
+      try {
+        (g.pointLabel as (fn: (d: object) => string) => unknown)((d) => {
+          const p = d as GlobePoint;
+          return `<div style="background:rgba(10,14,39,.92);border:1px solid #00ff66;padding:6px 10px;border-radius:6px;font-family:monospace;color:#fff;font-size:12px"><b style="color:#00ff66">${p.name}</b><br/><span style="color:#00d4ff">${p.count} artiste${p.count > 1 ? "s" : ""}</span></div>`;
+        });
+      } catch { /* ignore */ }
+    }
 
 
     // Fallback si la texture locale échoue (404)
