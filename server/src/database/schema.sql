@@ -139,3 +139,21 @@ CREATE TABLE IF NOT EXISTS sessions (
   INDEX idx_token (token_hash),
   CONSTRAINT fk_sess_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Admin-editable artist metadata, merged with auto-generated music.ts data
+CREATE TABLE IF NOT EXISTS artists_metadata (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  artist_slug VARCHAR(255) UNIQUE NOT NULL,
+  biography TEXT,
+  years_active VARCHAR(50),
+  main_genre VARCHAR(100),
+  description TEXT,
+  image_url VARCHAR(500),
+  country VARCHAR(100),
+  social_links JSON,
+  admin_notes TEXT,
+  updated_by INT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_slug (artist_slug),
+  CONSTRAINT fk_meta_admin FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
