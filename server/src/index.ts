@@ -50,6 +50,7 @@ app.use("/api/playlists", playlistRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/history", historyRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/artists", artistsRouter);
 
 app.use(notFound);
 app.use(errorHandler);
