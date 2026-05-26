@@ -162,7 +162,7 @@ function RootComponent() {
                 <AppSidebar />
                 <SidebarInset className="flex flex-col bg-transparent">
                   <Header />
-                  <main className="flex-1 pb-32">
+                  <main className="flex-1 pb-4">
                     <Outlet />
                   </main>
                   <PlayerBar />
