@@ -110,3 +110,83 @@ adminRouter.get("/logs", async (req, res, next) => {
     res.json(rows);
   } catch (e) { next(e); }
 });
+
+// ---------- ARTISTS METADATA (admin-only editing, persisted in DB) ----------
+adminRouter.get("/artists", async (_req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT artist_slug AS slug, biography, years_active AS yearsActive,
+              main_genre AS mainGenre, description, image_url AS imageUrl,
+              country, social_links AS socialLinks, updated_at AS updatedAt
+         FROM artists_metadata ORDER BY updated_at DESC`,
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+adminRouter.get("/artists/:slug", async (req, res, next) => {
+  try {
+    const row = await queryOne<any>(
+      `SELECT artist_slug AS slug, biography, years_active AS yearsActive,
+              main_genre AS mainGenre, description, image_url AS imageUrl,
+              country, social_links AS socialLinks, admin_notes AS adminNotes,
+              updated_at AS updatedAt
+         FROM artists_metadata WHERE artist_slug = ?`,
+      [req.params.slug],
+    );
+    res.json(row || null);
+  } catch (e) { next(e); }
+});
+
+const artistMetaSchema = z.object({
+  biography: z.string().max(5000).optional().nullable(),
+  yearsActive: z.string().max(50).optional().nullable(),
+  mainGenre: z.string().max(100).optional().nullable(),
+  description: z.string().max(1000).optional().nullable(),
+  imageUrl: z.string().max(500).optional().nullable(),
+  country: z.string().max(100).optional().nullable(),
+  socialLinks: z.record(z.string(), z.string()).optional().nullable(),
+  adminNotes: z.string().max(2000).optional().nullable(),
+});
+
+adminRouter.put("/artists/:slug", async (req, res, next) => {
+  try {
+    const slug = req.params.slug;
+    if (!slug || slug.length > 255) return res.status(400).json({ error: "Invalid slug" });
+    const d = artistMetaSchema.parse(req.body);
+    const social = d.socialLinks ? JSON.stringify(d.socialLinks) : null;
+    await exec(
+      `INSERT INTO artists_metadata
+        (artist_slug, biography, years_active, main_genre, description,
+         image_url, country, social_links, admin_notes, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         biography = VALUES(biography),
+         years_active = VALUES(years_active),
+         main_genre = VALUES(main_genre),
+         description = VALUES(description),
+         image_url = VALUES(image_url),
+         country = VALUES(country),
+         social_links = VALUES(social_links),
+         admin_notes = VALUES(admin_notes),
+         updated_by = VALUES(updated_by)`,
+      [
+        slug, d.biography ?? null, d.yearsActive ?? null, d.mainGenre ?? null,
+        d.description ?? null, d.imageUrl ?? null, d.country ?? null,
+        social, d.adminNotes ?? null, req.user!.sub,
+      ],
+    );
+    await logAdmin({
+      adminUserId: req.user!.sub, action: "edit_artist",
+      targetUsername: slug, details: "metadata updated", ipAddress: req.ip,
+    });
+    const row = await queryOne(
+      `SELECT artist_slug AS slug, biography, years_active AS yearsActive,
+              main_genre AS mainGenre, description, image_url AS imageUrl,
+              country, social_links AS socialLinks, updated_at AS updatedAt
+         FROM artists_metadata WHERE artist_slug = ?`,
+      [slug],
+    );
+    res.json({ success: true, artist: row });
+  } catch (e) { next(e); }
+});
