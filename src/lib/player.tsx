@@ -273,11 +273,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     crossfading.current = true;
     const nextSong = queue[next];
-    inactive.src = nextSong.audioUrl || nextSong.url;
+    const inactiveKey: "A" | "B" = activeKey.current === "A" ? "B" : "A";
+    const nextSrc = nextSong.audioUrl || nextSong.url;
+    loadedSrc.current[inactiveKey] = nextSrc;
+    inactive.src = nextSrc;
     inactive.currentTime = 0;
     inactive.play().catch(() => {});
     storage.addRecent(nextSong);
     logPlayToServer(nextSong);
+
 
     const t = ctx.currentTime;
     gA.gain.cancelScheduledValues(t);
