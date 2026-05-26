@@ -170,14 +170,22 @@ function FullscreenPlayer({ onAddToPlaylist }: { onAddToPlaylist: () => void }) 
             <Heart className={`size-5 ${fav ? "fill-current" : ""}`} />
           </IconBtn>
           <IconBtn onClick={onAddToPlaylist} label="Ajouter à une playlist"><Plus className="size-5" /></IconBtn>
-          <div className="flex items-center gap-2 ml-2">
+          <div className="flex items-center gap-2 ml-2 w-44">
             <button onClick={p.toggleMute} aria-label="Muet" className="text-muted-foreground hover:text-[color:var(--neon-cyan)]">
               {p.muted || p.volume === 0 ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
             </button>
-            <input type="range" min={0} max={1} step={0.01} value={p.muted ? 0 : p.volume}
-              onChange={(e) => p.setVolume(parseFloat(e.target.value))}
-              aria-label="Volume" className="w-32 accent-[color:var(--neon-cyan)]" />
+            <CustomSlider
+              value={p.muted ? 0 : p.volume}
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={(v) => p.setVolume(v)}
+              color="cyan"
+              showValue={false}
+              ariaLabel="Volume"
+            />
           </div>
+
         </div>
       </div>
     </div>
