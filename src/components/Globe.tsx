@@ -78,7 +78,6 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
     scene.add(rim);
 
     // Globe
-    // three-globe expose des accessors typés `object` — on cast vers GlobePoint
     const globe = new ThreeGlobe()
       .globeImageUrl(EARTH_LOCAL)
       .bumpImageUrl(BUMP_URL)
@@ -93,6 +92,22 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       .pointRadius(0.55)
       .pointsMerge(false)
       .pointsTransitionDuration(0);
+
+    // Hover label + click navigation (typed accessors not in d.ts)
+    (globe as unknown as {
+      pointLabel: (fn: (d: object) => string) => unknown;
+      onPointClick: (fn: (d: object) => void) => unknown;
+    }).pointLabel((d: object) => {
+      const p = d as GlobePoint;
+      return `<div style="background:rgba(10,14,39,0.92);border:1px solid #00ff66;padding:6px 10px;border-radius:6px;font-family:monospace;color:#fff;font-size:12px"><b style="color:#00ff66">${p.name}</b><br/><span style="color:#00d4ff">${p.count} artiste${p.count > 1 ? "s" : ""}</span></div>`;
+    });
+    (globe as unknown as {
+      onPointClick: (fn: (d: object) => void) => unknown;
+    }).onPointClick((d: object) => {
+      const p = d as GlobePoint;
+      navigate({ to: "/country/$country", params: { country: p.name } });
+    });
+
 
     // Fallback si la texture locale échoue (404)
     const probe = new Image();
