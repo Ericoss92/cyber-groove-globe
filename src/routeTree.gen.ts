@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AdminStatsRouteImport } from './routes/admin-stats'
+import { Route as AdminArtistsRouteImport } from './routes/admin-artists'
 import { Route as AdminApprovalRouteImport } from './routes/admin-approval'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CountryCountryRouteImport } from './routes/country.$country'
@@ -68,6 +69,11 @@ const AdminStatsRoute = AdminStatsRouteImport.update({
   path: '/admin-stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminArtistsRoute = AdminArtistsRouteImport.update({
+  id: '/admin-artists',
+  path: '/admin-artists',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminApprovalRoute = AdminApprovalRouteImport.update({
   id: '/admin-approval',
   path: '/admin-approval',
@@ -92,6 +98,7 @@ const ArtistSlugRoute = ArtistSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
+  '/admin-artists': typeof AdminArtistsRoute
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
+  '/admin-artists': typeof AdminArtistsRoute
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin-approval': typeof AdminApprovalRoute
+  '/admin-artists': typeof AdminArtistsRoute
   '/admin-stats': typeof AdminStatsRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin-approval'
+    | '/admin-artists'
     | '/admin-stats'
     | '/discover'
     | '/favorites'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin-approval'
+    | '/admin-artists'
     | '/admin-stats'
     | '/discover'
     | '/favorites'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin-approval'
+    | '/admin-artists'
     | '/admin-stats'
     | '/discover'
     | '/favorites'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminApprovalRoute: typeof AdminApprovalRoute
+  AdminArtistsRoute: typeof AdminArtistsRoute
   AdminStatsRoute: typeof AdminStatsRoute
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-artists': {
+      id: '/admin-artists'
+      path: '/admin-artists'
+      fullPath: '/admin-artists'
+      preLoaderRoute: typeof AdminArtistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-approval': {
       id: '/admin-approval'
       path: '/admin-approval'
@@ -298,6 +318,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminApprovalRoute: AdminApprovalRoute,
+  AdminArtistsRoute: AdminArtistsRoute,
   AdminStatsRoute: AdminStatsRoute,
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,
@@ -313,3 +334,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
