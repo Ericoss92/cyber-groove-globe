@@ -78,7 +78,6 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
     scene.add(rim);
 
     // Globe
-    // three-globe expose des accessors typés `object` — on cast vers GlobePoint
     const globe = new ThreeGlobe()
       .globeImageUrl(EARTH_LOCAL)
       .bumpImageUrl(BUMP_URL)
@@ -94,6 +93,22 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       .pointsMerge(false)
       .pointsTransitionDuration(0);
 
+    // Hover label + click navigation (typed accessors not in d.ts)
+    (globe as unknown as {
+      pointLabel: (fn: (d: object) => string) => unknown;
+      onPointClick: (fn: (d: object) => void) => unknown;
+    }).pointLabel((d: object) => {
+      const p = d as GlobePoint;
+      return `<div style="background:rgba(10,14,39,0.92);border:1px solid #00ff66;padding:6px 10px;border-radius:6px;font-family:monospace;color:#fff;font-size:12px"><b style="color:#00ff66">${p.name}</b><br/><span style="color:#00d4ff">${p.count} artiste${p.count > 1 ? "s" : ""}</span></div>`;
+    });
+    (globe as unknown as {
+      onPointClick: (fn: (d: object) => void) => unknown;
+    }).onPointClick((d: object) => {
+      const p = d as GlobePoint;
+      navigate({ to: "/country/$country", params: { country: p.name } });
+    });
+
+
     // Fallback si la texture locale échoue (404)
     const probe = new Image();
     probe.onerror = () => globe.globeImageUrl(EARTH_FALLBACK);
@@ -101,20 +116,60 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
 
     scene.add(globe);
 
-    // ---- Interactions custom (drag + wheel + auto-rotate) ----
+    // ---- Interactions custom (drag + wheel + auto-rotate + click) ----
     let isDragging = false;
+    let downX = 0,
+      downY = 0;
     let lastX = 0,
       lastY = 0;
     let velX = 0,
       velY = 0;
     let lastInteract = performance.now();
-    const ROT_SPEED = 0.0008; // auto-rotation lente
+    const ROT_SPEED = 0.0008;
 
     const el = renderer.domElement;
     el.style.cursor = "grab";
 
+    // Raycaster — three-globe exposes points via globe.children meshes,
+    // but the simplest robust path is to raycast against the entire globe
+    // subtree and resolve back to the nearest GlobePoint by lat/lng.
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+
+    /** Resolve a screen-space click to the nearest country point, if hit. */
+    const pickCountry = (clientX: number, clientY: number): GlobePoint | null => {
+      const rect = el.getBoundingClientRect();
+      ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObject(globe, true);
+      if (!hits.length) return null;
+      // Convert the hit world-point back to lat/lng and match nearest point
+      const hitWorld = hits[0].point.clone();
+      globe.worldToLocal(hitWorld);
+      const radius = hitWorld.length();
+      if (radius === 0) return null;
+      const lat = 90 - (Math.acos(hitWorld.y / radius) * 180) / Math.PI;
+      const lng = (Math.atan2(hitWorld.z, -hitWorld.x) * 180) / Math.PI;
+      let best: GlobePoint | null = null;
+      let bestD = Infinity;
+      for (const p of points) {
+        const dLat = p.lat - lat;
+        const dLng = p.lng - lng;
+        const d = dLat * dLat + dLng * dLng;
+        if (d < bestD) {
+          bestD = d;
+          best = p;
+        }
+      }
+      // ~7° tolerance
+      return best && bestD < 50 ? best : null;
+    };
+
     const onDown = (e: PointerEvent) => {
       isDragging = true;
+      downX = e.clientX;
+      downY = e.clientY;
       lastX = e.clientX;
       lastY = e.clientY;
       el.style.cursor = "grabbing";
@@ -135,12 +190,19 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       lastY = e.clientY;
       lastInteract = performance.now();
     };
-    const onUp = () => {
+    const onUp = (e: PointerEvent) => {
+      const wasClick =
+        Math.abs(e.clientX - downX) < 4 && Math.abs(e.clientY - downY) < 4;
       isDragging = false;
       el.style.cursor = "grab";
+      // Country click — only in expanded mode (compact mode = open fullscreen)
+      if (wasClick && innerExpanded.current) {
+        const p = pickCountry(e.clientX, e.clientY);
+        if (p) navigate({ to: "/country/$country", params: { country: p.name } });
+      }
     };
     const onWheel = (e: WheelEvent) => {
-      if (!innerExpanded.current) return; // pas de zoom en mode compact
+      if (!innerExpanded.current) return;
       e.preventDefault();
       camera.position.z = Math.max(
         140,
@@ -154,6 +216,7 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
     window.addEventListener("pointerup", onUp);
     el.addEventListener("wheel", onWheel, { passive: false });
 
+
     // Resize observer — suit le container
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = mount;
@@ -163,8 +226,14 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       camera.updateProjectionMatrix();
     };
     resize();
-    const ro = new ResizeObserver(resize);
+    // Debounce via rAF to avoid "ResizeObserver loop" warnings
+    let resizeRaf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(resize);
+    });
     ro.observe(mount);
+
 
     // Boucle d'animation
     let raf = 0;
@@ -205,7 +274,8 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
 
   // --- Rendu ---
   const compactClasses =
-    "relative w-full h-full rounded-2xl overflow-hidden cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.02] box-glow-green";
+    "relative w-full h-full overflow-hidden cursor-pointer transition-[filter] duration-500 ease-out hover:[filter:drop-shadow(0_0_24px_color-mix(in_oklab,var(--neon-green)_50%,transparent))]";
+
   const expandedClasses = "relative w-full h-full";
 
   if (isExpanded) {

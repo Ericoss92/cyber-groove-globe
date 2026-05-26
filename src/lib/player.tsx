@@ -80,6 +80,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const masterGain = useRef<GainNode | null>(null);
   const activeKey = useRef<"A" | "B">("A");
   const crossfading = useRef(false);
+  // Tracks the *resolved* src last loaded on each element. Used to avoid
+  // reloading (and thus restarting) a song that's already playing after a
+  // crossfade swap — without this, the `current` effect compares
+  // `a.src` (absolute, resolved by the browser) to the raw audioUrl
+  // (often a relative path), they differ, and the song restarts at 0.
+  const loadedSrc = useRef<{ A: string | null; B: string | null }>({ A: null, B: null });
 
   if (typeof window !== "undefined" && !audioA.current) {
     audioA.current = new Audio();
@@ -89,6 +95,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     audioA.current.crossOrigin = "anonymous";
     audioB.current.crossOrigin = "anonymous";
   }
+
 
   const [queue, setQueue] = useState<Song[]>([]);
   const [index, setIndex] = useState(0);
@@ -212,11 +219,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const a = getActive();
     const primary = current.audioUrl || current.url;
     const fallback = current.audioUrl ? current.url : null;
-    if (a.src !== primary) {
-      // One-shot fallback handler if local file 404s
+    // Compare against the *tracked* loaded key, not a.src (which the browser
+    // resolves to an absolute URL and would never equal a relative path).
+    const key = activeKey.current;
+    if (loadedSrc.current[key] !== primary) {
       const onErr = () => {
-        if (fallback && a.src !== fallback) {
+        if (fallback && loadedSrc.current[key] !== fallback) {
           console.warn(`[player] ${primary} failed, falling back to ${fallback}`);
+          loadedSrc.current[key] = fallback;
           a.src = fallback;
           a.play().catch(() => setPlaying(false));
         } else {
@@ -226,6 +236,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         a.removeEventListener("error", onErr);
       };
       a.addEventListener("error", onErr, { once: true });
+      loadedSrc.current[key] = primary;
       a.src = primary;
       a.play().catch((e) => {
         console.warn("[player] play() rejected", e);
@@ -235,6 +246,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       logPlayToServer(current);
     }
   }, [current, ensureAudioGraph]);
+
 
   function pickNextIndex(): number | null {
     if (queue.length === 0) return null;
@@ -261,11 +273,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     crossfading.current = true;
     const nextSong = queue[next];
-    inactive.src = nextSong.audioUrl || nextSong.url;
+    const inactiveKey: "A" | "B" = activeKey.current === "A" ? "B" : "A";
+    const nextSrc = nextSong.audioUrl || nextSong.url;
+    loadedSrc.current[inactiveKey] = nextSrc;
+    inactive.src = nextSrc;
     inactive.currentTime = 0;
     inactive.play().catch(() => {});
     storage.addRecent(nextSong);
     logPlayToServer(nextSong);
+
 
     const t = ctx.currentTime;
     gA.gain.cancelScheduledValues(t);

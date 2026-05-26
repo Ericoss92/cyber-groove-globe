@@ -8,6 +8,8 @@ import { usePlayer } from "@/lib/player";
 import { storage } from "@/lib/storage";
 import { formatDuration } from "@/data/music";
 import AddToPlaylistModal from "./AddToPlaylistModal";
+import { CustomSlider } from "./CustomSlider";
+
 
 export default function PlayerBar() {
   const p = usePlayer();
@@ -20,8 +22,10 @@ export default function PlayerBar() {
 
   return (
     <>
-      <div className="fixed bottom-3 inset-x-3 md:inset-x-6 z-40 glass rounded-2xl border border-[color:var(--neon-green)]/40 box-glow-green animate-rise">
+      {/* Sticky inside SidebarInset → naturally respects sidebar width */}
+      <div className="sticky bottom-3 z-30 mx-3 md:mx-6 glass rounded-2xl border border-[color:var(--neon-green)]/40 box-glow-green animate-rise">
         <div className="mx-auto max-w-[1600px] grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-6 px-3 md:px-6 py-2.5">
+
           {/* Left: track info */}
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => p.setExpanded(true)} className="shrink-0 size-12 rounded overflow-hidden box-glow-cyan" aria-label="Agrandir le lecteur">
@@ -64,15 +68,22 @@ export default function PlayerBar() {
               <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
             </IconBtn>
             <IconBtn onClick={() => setAddOpen(true)} label="Ajouter à une playlist"><Plus className="size-4" /></IconBtn>
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 w-40">
               <button onClick={p.toggleMute} aria-label="Muet" className="text-muted-foreground hover:text-[color:var(--neon-cyan)]">
                 {p.muted || p.volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
               </button>
-              <input type="range" min={0} max={1} step={0.01} value={p.muted ? 0 : p.volume}
-                onChange={(e) => p.setVolume(parseFloat(e.target.value))}
-                aria-label="Volume"
-                className="w-24 accent-[color:var(--neon-cyan)]" />
+              <CustomSlider
+                value={p.muted ? 0 : p.volume}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => p.setVolume(v)}
+                color="cyan"
+                showValue={false}
+                ariaLabel="Volume"
+              />
             </div>
+
             <IconBtn onClick={() => p.setExpanded(true)} label="Plein écran"><Maximize2 className="size-4" /></IconBtn>
           </div>
         </div>
@@ -159,14 +170,22 @@ function FullscreenPlayer({ onAddToPlaylist }: { onAddToPlaylist: () => void }) 
             <Heart className={`size-5 ${fav ? "fill-current" : ""}`} />
           </IconBtn>
           <IconBtn onClick={onAddToPlaylist} label="Ajouter à une playlist"><Plus className="size-5" /></IconBtn>
-          <div className="flex items-center gap-2 ml-2">
+          <div className="flex items-center gap-2 ml-2 w-44">
             <button onClick={p.toggleMute} aria-label="Muet" className="text-muted-foreground hover:text-[color:var(--neon-cyan)]">
               {p.muted || p.volume === 0 ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
             </button>
-            <input type="range" min={0} max={1} step={0.01} value={p.muted ? 0 : p.volume}
-              onChange={(e) => p.setVolume(parseFloat(e.target.value))}
-              aria-label="Volume" className="w-32 accent-[color:var(--neon-cyan)]" />
+            <CustomSlider
+              value={p.muted ? 0 : p.volume}
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={(v) => p.setVolume(v)}
+              color="cyan"
+              showValue={false}
+              ariaLabel="Volume"
+            />
           </div>
+
         </div>
       </div>
     </div>

@@ -1,10 +1,12 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { User as UserIcon, LogOut, Save } from "lucide-react";
+import { User as UserIcon, LogOut, Save, Volume2, Wind } from "lucide-react";
 import { api, cachedUser, tokens } from "@/api/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useStats } from "@/hooks/useStats";
 import { storage } from "@/lib/storage";
+import { CustomSlider } from "@/components/CustomSlider";
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profil · SOUNDWAVE" }] }),
@@ -91,21 +93,30 @@ function ProfilePage() {
       <section className="glass rounded-xl p-5 space-y-4">
         <h2 className="font-display text-lg glow-cyan">Préférences audio</h2>
 
-        <div>
-          <label className="flex justify-between text-sm font-mono">
-            <span>Volume par défaut</span><span>{volume}%</span>
-          </label>
-          <input type="range" min={0} max={100} value={volume} onChange={(e) => setVolume(Number(e.target.value))}
-            className="w-full accent-[color:var(--neon-green)]" />
-        </div>
+        <CustomSlider
+          label="Volume"
+          icon={<Volume2 size={16} />}
+          value={volume}
+          min={0}
+          max={100}
+          step={1}
+          onChange={(v) => setVolume(Math.round(v))}
+          color="green"
+          formatValue={(v) => `${Math.round(v)}%`}
+        />
 
-        <div>
-          <label className="flex justify-between text-sm font-mono">
-            <span>Crossfade</span><span>{crossfade}s</span>
-          </label>
-          <input type="range" min={0} max={10} step={0.5} value={crossfade} onChange={(e) => setCrossfade(Number(e.target.value))}
-            className="w-full accent-[color:var(--neon-pink)]" />
-        </div>
+        <CustomSlider
+          label="Crossfade"
+          icon={<Wind size={16} />}
+          value={crossfade}
+          min={0}
+          max={10}
+          step={0.5}
+          onChange={setCrossfade}
+          color="pink"
+          formatValue={(v) => `${v.toFixed(1)}s`}
+        />
+
 
         <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
           <input type="checkbox" checked={gapless} onChange={(e) => setGapless(e.target.checked)}
