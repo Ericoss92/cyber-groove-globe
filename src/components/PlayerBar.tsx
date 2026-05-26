@@ -8,6 +8,8 @@ import { usePlayer } from "@/lib/player";
 import { storage } from "@/lib/storage";
 import { formatDuration } from "@/data/music";
 import AddToPlaylistModal from "./AddToPlaylistModal";
+import { CustomSlider } from "./CustomSlider";
+
 
 export default function PlayerBar() {
   const p = usePlayer();
