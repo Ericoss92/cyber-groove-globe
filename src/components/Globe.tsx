@@ -226,8 +226,14 @@ export default function Globe({ expanded: ctrl, onExpandedChange }: Props) {
       camera.updateProjectionMatrix();
     };
     resize();
-    const ro = new ResizeObserver(resize);
+    // Debounce via rAF to avoid "ResizeObserver loop" warnings
+    let resizeRaf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(resize);
+    });
     ro.observe(mount);
+
 
     // Boucle d'animation
     let raf = 0;
