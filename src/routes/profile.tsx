@@ -103,49 +103,18 @@ function ProfilePage() {
         )}
       </section>
 
-      {/* PRÉFÉRENCES */}
-      <section className="glass rounded-xl p-5 space-y-4">
-        <h2 className="font-display text-lg glow-cyan">Préférences audio</h2>
+      <AudioPreferencesBlock
+        volume={volume}
+        crossfade={crossfade}
+        gapless={gapless}
+        onVolumeChange={setVolume}
+        onCrossfadeChange={setCrossfade}
+        onGaplessChange={setGapless}
+        onSave={save}
+        saveState={saveState}
+        errorMsg={errorMsg}
+      />
 
-        <CustomSlider
-          label="Volume"
-          icon={<Volume2 size={16} />}
-          value={volume}
-          min={0}
-          max={100}
-          step={1}
-          onChange={(v) => setVolume(Math.round(v))}
-          color="green"
-          formatValue={(v) => `${Math.round(v)}%`}
-        />
-
-        <CustomSlider
-          label="Crossfade"
-          icon={<Wind size={16} />}
-          value={crossfade}
-          min={0}
-          max={10}
-          step={0.5}
-          onChange={setCrossfade}
-          color="pink"
-          formatValue={(v) => `${v.toFixed(1)}s`}
-        />
-
-
-        <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
-          <input type="checkbox" checked={gapless} onChange={(e) => setGapless(e.target.checked)}
-            className="accent-[color:var(--neon-cyan)]" />
-          Lecture sans coupure (gapless)
-        </label>
-
-        <div className="flex items-center gap-3">
-          <button onClick={save} disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[color:var(--neon-green)] text-[color:var(--background)] text-sm font-medium hover:scale-105 transition disabled:opacity-60">
-            <Save className="size-4" /> {saving ? "Sauvegarde…" : "Sauvegarder"}
-          </button>
-          {savedAt && <span className="text-xs font-mono text-[color:var(--neon-green)]">// enregistré {savedAt}</span>}
-        </div>
-      </section>
 
       {/* STATS */}
       <section className="glass rounded-xl p-5 space-y-2">
