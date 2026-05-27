@@ -109,7 +109,7 @@ function ArtistPage() {
                     {display.mainGenre}
                   </span>
                 )}
-                {display.genres.filter((g) => g !== display.mainGenre).map((g) => (
+                {display.genres.filter((g: string) => g !== display.mainGenre).map((g: string) => (
                   <span key={g} className="px-2 py-0.5 rounded-full text-xs font-mono bg-[color:var(--neon-pink)]/15 text-[color:var(--neon-pink)] border border-[color:var(--neon-pink)]/30">{g}</span>
                 ))}
               </div>
