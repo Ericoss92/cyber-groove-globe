@@ -44,7 +44,7 @@ function pickSuggestions(n: number, preferGenres: Set<string>): Song[] {
   return scored.slice(0, n).map(x => x.s);
 }
 
-export function useDiscoverData() {
+export function useDiscoverData(period: "day" | "week" | "month" | "year" | "all" = "week") {
   const [data, setData] = useState<DiscoverData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export function useDiscoverData() {
       try {
         const [historyRes, topRes] = await Promise.allSettled([
           api.history(10, 0) as Promise<RecentRow[]>,
-          api.topArtists("week", 5) as Promise<TopArtistRow[]>,
+          api.topArtists(period, 10) as Promise<TopArtistRow[]>,
         ]);
         const recentRows = historyRes.status === "fulfilled" ? historyRes.value : [];
         const topArtists = topRes.status === "fulfilled" ? topRes.value : [];
@@ -74,7 +74,7 @@ export function useDiscoverData() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [period]);
 
   return { data, loading, error, hasCatalog: ARTISTS.length > 0 };
 }

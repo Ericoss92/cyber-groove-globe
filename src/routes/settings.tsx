@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { storage, type Settings, type Theme } from "@/lib/storage";
-import { ShieldCheck, ShieldAlert, Volume2, Sparkles, Cpu, User2, BarChart3 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Sparkles, Cpu, User2, BarChart3 } from "lucide-react";
+import { toast } from "sonner";
 import { useStats } from "@/hooks/useStats";
+import { api } from "@/api/client";
+import { AudioPreferencesBlock } from "@/components/AudioPreferencesBlock";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -18,12 +21,48 @@ function SettingsPage() {
   const [s, setS] = useState<Settings>(storage.getSettings());
   const user = storage.currentUser();
 
+  // Server-backed audio prefs (mirror of /api/user/preferences)
+  const [volume, setVolume] = useState(75);
+  const [crossfade, setCrossfade] = useState(3);
+  const [gapless, setGapless] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
     storage.setSettings(s);
-    // apply theme
     document.documentElement.setAttribute("data-theme", s.theme);
     document.documentElement.style.setProperty("--neon-intensity", String(s.neonIntensity));
   }, [s]);
+
+  useEffect(() => {
+    api.getPreferences()
+      .then((p: any) => {
+        if (!p) return;
+        const vol = typeof p.volume === "number" ? p.volume : 75;
+        setVolume(vol <= 1 ? Math.round(vol * 100) : Math.round(vol));
+        setCrossfade(p.crossfade_duration ?? 3);
+        setGapless(!!p.gapless_playback);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function saveAudio() {
+    setSaveState("saving"); setErrorMsg(null);
+    try {
+      await api.updatePreferences({
+        volume,
+        crossfade_duration: crossfade,
+        gapless_playback: gapless,
+      });
+      setSaveState("success");
+      toast.success("Préférences sauvegardées");
+      setTimeout(() => setSaveState("idle"), 2500);
+    } catch (e: any) {
+      const msg = e?.message || "Erreur sauvegarde";
+      setSaveState("error"); setErrorMsg(msg);
+      toast.error(msg);
+    }
+  }
 
   const update = <K extends keyof Settings>(k: K, v: Settings[K]) => setS(prev => ({ ...prev, [k]: v }));
 
@@ -34,18 +73,19 @@ function SettingsPage() {
         <h1 className="font-display text-4xl glow-green">Paramètres</h1>
       </header>
 
-      {/* Audio Engine */}
-      <Card title="Moteur audio" icon={<Volume2 className="size-4" />} accent="green">
-        <Row label="Lecture sans coupure (Gapless)" desc="Élimine le silence entre les pistes consécutives.">
-          <Toggle checked={s.gapless} onChange={(v) => update("gapless", v)} label="Gapless" />
-        </Row>
-        <Row label={`Crossfade : ${s.crossfade.toFixed(1)} s`} desc="Fondu enchaîné entre la fin d'une piste et le début de la suivante.">
-          <input type="range" min={0} max={10} step={0.5} value={s.crossfade}
-            onChange={(e) => update("crossfade", parseFloat(e.target.value))}
-            aria-label="Durée du crossfade en secondes"
-            className="w-56 accent-[color:var(--neon-green)]" />
-        </Row>
-      </Card>
+      {/* Audio Engine — shared block, persists to API */}
+      <AudioPreferencesBlock
+        volume={volume}
+        crossfade={crossfade}
+        gapless={gapless}
+        onVolumeChange={setVolume}
+        onCrossfadeChange={setCrossfade}
+        onGaplessChange={setGapless}
+        onSave={saveAudio}
+        saveState={saveState}
+        errorMsg={errorMsg}
+      />
+
 
       {/* Visual Themes */}
       <Card title="Thèmes visuels" icon={<Sparkles className="size-4" />} accent="pink">

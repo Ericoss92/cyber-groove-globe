@@ -1,5 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { BarChart3, Users, PlayCircle, Clock as ClockIcon } from "lucide-react";
+import { useMemo } from "react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
@@ -13,6 +14,35 @@ export const Route = createFileRoute("/admin-stats")({
 });
 
 const NEON = ["#39ff14", "#ff2bd6", "#00e5ff", "#ffd166", "#f72585", "#7b2cbf", "#4cc9f0", "#80ed99", "#ffafcc", "#bde0fe"];
+
+const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const formatDateFR = (raw: string) => {
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? raw : dateFmt.format(d);
+};
+
+function NeonTooltip({ active, payload, label, accent = "#39ff14", unit = "" }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      className="rounded-md px-3 py-2 font-mono text-xs"
+      style={{
+        background: "rgba(10, 14, 39, 0.95)",
+        border: `1px solid ${accent}`,
+        color: accent,
+        boxShadow: `0 0 12px ${accent}55`,
+      }}
+    >
+      {label && <div className="text-foreground/90 mb-0.5">{label}</div>}
+      {payload.map((p: any, i: number) => (
+        <div key={i}>
+          <span style={{ color: p.color || accent }}>● </span>
+          {p.name}: <b>{p.value}</b>{unit && ` ${unit}`}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function StatsCard({ icon: Icon, label, value, accent }: { icon: any; label: string; value: number | string; accent: string }) {
   return (
@@ -32,6 +62,12 @@ function AdminStatsPage() {
   const u = cachedUser.get();
   if (!u?.admin) return <Navigate to="/" />;
   const { data, loading, error, refresh } = useAdminStats();
+
+  const dailyData = useMemo(
+    () => (data?.dailyActiveUsers ?? []).map((d: any) => ({ ...d, date: formatDateFR(d.date) })),
+    [data?.dailyActiveUsers],
+  );
+
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 md:px-6 py-8 space-y-8">
@@ -69,11 +105,11 @@ function AdminStatsPage() {
           <h3 className="font-display text-lg mb-3 glow-cyan">Utilisateurs actifs par jour (30j)</h3>
           <div className="h-64">
             <ResponsiveContainer>
-              <LineChart data={data?.dailyActiveUsers ?? []}>
+              <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} />
                 <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #39ff14", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#39ff14" unit="utilisateurs" />} cursor={{ stroke: "#39ff1444" }} />
                 <Line type="monotone" dataKey="count" stroke="#39ff14" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -88,7 +124,7 @@ function AdminStatsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: "#e5e7eb" }} width={100} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #ff2bd6", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#ff2bd6" unit="écoutes" />} cursor={{ fill: "#ff2bd611" }} />
                 <Bar dataKey="count" fill="#ff2bd6" />
               </BarChart>
             </ResponsiveContainer>
@@ -103,7 +139,7 @@ function AdminStatsPage() {
                 <Pie data={data?.topGenresGlobal ?? []} dataKey="count" nameKey="name" outerRadius={90} label={{ fontSize: 10 }}>
                   {(data?.topGenresGlobal ?? []).map((_, i) => <Cell key={i} fill={NEON[i % NEON.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #39ff14", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#39ff14" />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
@@ -118,7 +154,7 @@ function AdminStatsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9ca3af" }} angle={-25} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #00e5ff", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#00e5ff" unit="écoutes" />} cursor={{ fill: "#00e5ff11" }} />
                 <Bar dataKey="count" fill="#00e5ff" />
               </BarChart>
             </ResponsiveContainer>

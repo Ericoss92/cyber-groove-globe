@@ -1,11 +1,12 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { User as UserIcon, LogOut, Save, Volume2, Wind } from "lucide-react";
+import { User as UserIcon, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import { api, cachedUser, tokens } from "@/api/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useStats } from "@/hooks/useStats";
 import { storage } from "@/lib/storage";
-import { CustomSlider } from "@/components/CustomSlider";
+import { AudioPreferencesBlock } from "@/components/AudioPreferencesBlock";
 
 
 export const Route = createFileRoute("/profile")({
@@ -24,29 +25,42 @@ function ProfilePage() {
   const [volume, setVolume] = useState(75);
   const [crossfade, setCrossfade] = useState(3);
   const [gapless, setGapless] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Load real preferences from API
   useEffect(() => {
-    if (!profile) return;
-    setVolume(Math.round((profile.volume ?? 0.75) * 100));
-    setCrossfade(profile.crossfade_duration ?? 3);
-    setGapless(!!profile.gapless_playback);
-  }, [profile]);
+    let active = true;
+    api.getPreferences()
+      .then((p: any) => {
+        if (!active || !p) return;
+        const vol = typeof p.volume === "number" ? p.volume : 75;
+        // accept both 0-1 and 0-100 backends
+        setVolume(vol <= 1 ? Math.round(vol * 100) : Math.round(vol));
+        setCrossfade(p.crossfade_duration ?? 3);
+        setGapless(!!p.gapless_playback);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   async function save() {
-    setSaving(true);
+    setSaveState("saving"); setErrorMsg(null);
     try {
       await api.updatePreferences({
-        volume: volume / 100,
+        volume,
         crossfade_duration: crossfade,
         gapless_playback: gapless,
       });
-      setSavedAt(new Date().toLocaleTimeString());
+      setSaveState("success");
+      toast.success("Préférences sauvegardées");
       refresh();
+      setTimeout(() => setSaveState("idle"), 2500);
     } catch (e: any) {
-      alert(e?.message || "Erreur sauvegarde");
-    } finally { setSaving(false); }
+      const msg = e?.message || "Erreur sauvegarde";
+      setSaveState("error"); setErrorMsg(msg);
+      toast.error(msg);
+    }
   }
 
   async function logout() {
@@ -89,49 +103,18 @@ function ProfilePage() {
         )}
       </section>
 
-      {/* PRÉFÉRENCES */}
-      <section className="glass rounded-xl p-5 space-y-4">
-        <h2 className="font-display text-lg glow-cyan">Préférences audio</h2>
+      <AudioPreferencesBlock
+        volume={volume}
+        crossfade={crossfade}
+        gapless={gapless}
+        onVolumeChange={setVolume}
+        onCrossfadeChange={setCrossfade}
+        onGaplessChange={setGapless}
+        onSave={save}
+        saveState={saveState}
+        errorMsg={errorMsg}
+      />
 
-        <CustomSlider
-          label="Volume"
-          icon={<Volume2 size={16} />}
-          value={volume}
-          min={0}
-          max={100}
-          step={1}
-          onChange={(v) => setVolume(Math.round(v))}
-          color="green"
-          formatValue={(v) => `${Math.round(v)}%`}
-        />
-
-        <CustomSlider
-          label="Crossfade"
-          icon={<Wind size={16} />}
-          value={crossfade}
-          min={0}
-          max={10}
-          step={0.5}
-          onChange={setCrossfade}
-          color="pink"
-          formatValue={(v) => `${v.toFixed(1)}s`}
-        />
-
-
-        <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
-          <input type="checkbox" checked={gapless} onChange={(e) => setGapless(e.target.checked)}
-            className="accent-[color:var(--neon-cyan)]" />
-          Lecture sans coupure (gapless)
-        </label>
-
-        <div className="flex items-center gap-3">
-          <button onClick={save} disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[color:var(--neon-green)] text-[color:var(--background)] text-sm font-medium hover:scale-105 transition disabled:opacity-60">
-            <Save className="size-4" /> {saving ? "Sauvegarde…" : "Sauvegarder"}
-          </button>
-          {savedAt && <span className="text-xs font-mono text-[color:var(--neon-green)]">// enregistré {savedAt}</span>}
-        </div>
-      </section>
 
       {/* STATS */}
       <section className="glass rounded-xl p-5 space-y-2">
