@@ -105,11 +105,11 @@ function AdminStatsPage() {
           <h3 className="font-display text-lg mb-3 glow-cyan">Utilisateurs actifs par jour (30j)</h3>
           <div className="h-64">
             <ResponsiveContainer>
-              <LineChart data={data?.dailyActiveUsers ?? []}>
+              <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} />
                 <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #39ff14", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#39ff14" unit="utilisateurs" />} cursor={{ stroke: "#39ff1444" }} />
                 <Line type="monotone" dataKey="count" stroke="#39ff14" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
