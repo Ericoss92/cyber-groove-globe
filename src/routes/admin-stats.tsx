@@ -1,5 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { BarChart3, Users, PlayCircle, Clock as ClockIcon } from "lucide-react";
+import { useMemo } from "react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
@@ -13,6 +14,35 @@ export const Route = createFileRoute("/admin-stats")({
 });
 
 const NEON = ["#39ff14", "#ff2bd6", "#00e5ff", "#ffd166", "#f72585", "#7b2cbf", "#4cc9f0", "#80ed99", "#ffafcc", "#bde0fe"];
+
+const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const formatDateFR = (raw: string) => {
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? raw : dateFmt.format(d);
+};
+
+function NeonTooltip({ active, payload, label, accent = "#39ff14", unit = "" }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      className="rounded-md px-3 py-2 font-mono text-xs"
+      style={{
+        background: "rgba(10, 14, 39, 0.95)",
+        border: `1px solid ${accent}`,
+        color: accent,
+        boxShadow: `0 0 12px ${accent}55`,
+      }}
+    >
+      {label && <div className="text-foreground/90 mb-0.5">{label}</div>}
+      {payload.map((p: any, i: number) => (
+        <div key={i}>
+          <span style={{ color: p.color || accent }}>● </span>
+          {p.name}: <b>{p.value}</b>{unit && ` ${unit}`}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function StatsCard({ icon: Icon, label, value, accent }: { icon: any; label: string; value: number | string; accent: string }) {
   return (
