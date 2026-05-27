@@ -124,7 +124,7 @@ function AdminStatsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: "#e5e7eb" }} width={100} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #ff2bd6", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#ff2bd6" unit="écoutes" />} cursor={{ fill: "#ff2bd611" }} />
                 <Bar dataKey="count" fill="#ff2bd6" />
               </BarChart>
             </ResponsiveContainer>
@@ -139,7 +139,7 @@ function AdminStatsPage() {
                 <Pie data={data?.topGenresGlobal ?? []} dataKey="count" nameKey="name" outerRadius={90} label={{ fontSize: 10 }}>
                   {(data?.topGenresGlobal ?? []).map((_, i) => <Cell key={i} fill={NEON[i % NEON.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #39ff14", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#39ff14" />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
@@ -154,7 +154,7 @@ function AdminStatsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9ca3af" }} angle={-25} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #00e5ff", fontSize: 12 }} />
+                <Tooltip content={<NeonTooltip accent="#00e5ff" unit="écoutes" />} cursor={{ fill: "#00e5ff11" }} />
                 <Bar dataKey="count" fill="#00e5ff" />
               </BarChart>
             </ResponsiveContainer>
