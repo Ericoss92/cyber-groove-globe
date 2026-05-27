@@ -63,6 +63,12 @@ function AdminStatsPage() {
   if (!u?.admin) return <Navigate to="/" />;
   const { data, loading, error, refresh } = useAdminStats();
 
+  const dailyData = useMemo(
+    () => (data?.dailyActiveUsers ?? []).map((d: any) => ({ ...d, date: formatDateFR(d.date) })),
+    [data?.dailyActiveUsers],
+  );
+
+
   return (
     <div className="mx-auto max-w-[1600px] px-4 md:px-6 py-8 space-y-8">
       <header className="flex items-center justify-between gap-3 flex-wrap">
