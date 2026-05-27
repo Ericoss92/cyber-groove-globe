@@ -1,11 +1,12 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { User as UserIcon, LogOut, Save, Volume2, Wind } from "lucide-react";
+import { User as UserIcon, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import { api, cachedUser, tokens } from "@/api/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useStats } from "@/hooks/useStats";
 import { storage } from "@/lib/storage";
-import { CustomSlider } from "@/components/CustomSlider";
+import { AudioPreferencesBlock } from "@/components/AudioPreferencesBlock";
 
 
 export const Route = createFileRoute("/profile")({
@@ -24,29 +25,42 @@ function ProfilePage() {
   const [volume, setVolume] = useState(75);
   const [crossfade, setCrossfade] = useState(3);
   const [gapless, setGapless] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Load real preferences from API
   useEffect(() => {
-    if (!profile) return;
-    setVolume(Math.round((profile.volume ?? 0.75) * 100));
-    setCrossfade(profile.crossfade_duration ?? 3);
-    setGapless(!!profile.gapless_playback);
-  }, [profile]);
+    let active = true;
+    api.getPreferences()
+      .then((p: any) => {
+        if (!active || !p) return;
+        const vol = typeof p.volume === "number" ? p.volume : 75;
+        // accept both 0-1 and 0-100 backends
+        setVolume(vol <= 1 ? Math.round(vol * 100) : Math.round(vol));
+        setCrossfade(p.crossfade_duration ?? 3);
+        setGapless(!!p.gapless_playback);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   async function save() {
-    setSaving(true);
+    setSaveState("saving"); setErrorMsg(null);
     try {
       await api.updatePreferences({
-        volume: volume / 100,
+        volume,
         crossfade_duration: crossfade,
         gapless_playback: gapless,
       });
-      setSavedAt(new Date().toLocaleTimeString());
+      setSaveState("success");
+      toast.success("Préférences sauvegardées");
       refresh();
+      setTimeout(() => setSaveState("idle"), 2500);
     } catch (e: any) {
-      alert(e?.message || "Erreur sauvegarde");
-    } finally { setSaving(false); }
+      const msg = e?.message || "Erreur sauvegarde";
+      setSaveState("error"); setErrorMsg(msg);
+      toast.error(msg);
+    }
   }
 
   async function logout() {
