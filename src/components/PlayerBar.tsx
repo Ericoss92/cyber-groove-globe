@@ -5,7 +5,7 @@ import {
   Repeat, Repeat1, Shuffle, Heart, Plus, Maximize2, X
 } from "lucide-react";
 import { usePlayer } from "@/lib/player";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import { formatDuration } from "@/data/music";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import { CustomSlider } from "./CustomSlider";
