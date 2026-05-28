@@ -357,7 +357,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     inactive.currentTime = 0;
     inactive.play().catch(() => {});
     storage.addRecent(nextSong);
-    logPlayToServer(nextSong);
+    // The old song reached crossfade window → treat as completed and flush,
+    // then start tracking the new one.
+    flushSession({ completed: true });
+    startSession(nextSong);
+
+
 
 
     const t = ctx.currentTime;
