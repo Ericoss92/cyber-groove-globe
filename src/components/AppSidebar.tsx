@@ -36,6 +36,7 @@ export default function AppSidebar() {
   async function doLogout() {
     try { await api.logout(); } catch {}
     storage.logout();
+    clearUserCaches();
     navigate({ to: "/login" });
   }
 
