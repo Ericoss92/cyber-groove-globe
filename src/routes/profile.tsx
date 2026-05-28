@@ -68,6 +68,7 @@ function ProfilePage() {
     try { await api.logout(); } catch {}
     tokens.clear();
     storage.logout();
+    clearUserCaches();
     navigate({ to: "/login" });
   }
 
