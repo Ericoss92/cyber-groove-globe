@@ -56,8 +56,10 @@ function flushSessionToServer(session: PlaySession, opts?: { completed?: boolean
   if (!payload) return;
   const t = tokens.access;
   if (!t) return;
+  const notifyStatsDirty = () => {
+    try { window.dispatchEvent(new Event("sw:stats-dirty")); } catch { /* noop */ }
+  };
   if (opts?.beacon) {
-    // beforeunload path — use keepalive fetch (sendBeacon can't set Authorization)
     try {
       fetch("/api/history/log", {
         method: "POST",
@@ -68,7 +70,9 @@ function flushSessionToServer(session: PlaySession, opts?: { completed?: boolean
     } catch { /* noop */ }
     return;
   }
-  import("@/api/client").then(({ api }) => { api.logPlay(payload).catch(() => {}); }).catch(() => {});
+  import("@/api/client").then(({ api }) => {
+    api.logPlay(payload).then(notifyStatsDirty).catch(() => {});
+  }).catch(() => {});
 }
 
 type Ctx = {
