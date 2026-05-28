@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Play, Heart, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { Song } from "@/lib/types";
 import { usePlayer } from "@/lib/player";
 import { useLibrary } from "@/lib/library";
@@ -10,6 +11,15 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
   const p = usePlayer();
   const lib = useLibrary();
   const [addSong, setAddSong] = useState<Song | null>(null);
+
+  function play(at: number) {
+    const target = songs[at] as Song & { __unplayable?: boolean };
+    if (!target || target.__unplayable || !(target.audioUrl || target.url)) {
+      toast.error(`Fichier audio introuvable pour "${target?.title ?? "ce titre"}"`);
+      return;
+    }
+    p.playQueue(songs, at);
+  }
 
   return (
     <>
@@ -36,7 +46,7 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
                     {isCurrent && p.playing ? <span className="inline-block size-2 rounded-full bg-[color:var(--neon-green)] animate-pulse-neon" /> : i + 1}
                   </td>
                   <td className="px-3 py-2">
-                    <button onClick={() => p.playQueue(songs, i)} className="flex items-center gap-3 text-left">
+                    <button onClick={() => play(i)} className="flex items-center gap-3 text-left">
                       <img src={s.cover} alt="" loading="lazy" className="size-9 rounded object-cover" />
                       <span className={`truncate ${isCurrent ? "text-[color:var(--neon-green)] glow-green" : ""}`}>{s.title}</span>
                     </button>
@@ -46,7 +56,7 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
                   <td className="px-3 py-2 text-right font-mono text-xs text-muted-foreground tabular-nums">{formatDuration(s.duration)}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
-                      <button onClick={() => p.playQueue(songs, i)} aria-label="Lire" className="p-1.5 rounded hover:text-[color:var(--neon-green)] hover:scale-110 transition"><Play className="size-4" /></button>
+                      <button onClick={() => play(i)} aria-label="Lire" className="p-1.5 rounded hover:text-[color:var(--neon-green)] hover:scale-110 transition"><Play className="size-4" /></button>
                       <button onClick={() => { void lib.toggleFavorite(s); p.bumpFav(); }} aria-label="Favoris" className={`p-1.5 rounded hover:scale-110 transition ${fav ? "text-[color:var(--neon-pink)]" : "hover:text-[color:var(--neon-pink)]"}`}>
                         <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
                       </button>

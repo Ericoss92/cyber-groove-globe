@@ -13,6 +13,42 @@ import {
 } from "react";
 import type { Song } from "./types";
 import { api, tokens } from "@/api/client";
+import { ARTISTS } from "@/data/music";
+
+/** Build (lazy) lookup maps to enrich BDD rows into full catalog Songs. */
+let _byId: Map<string, Song> | null = null;
+let _byKey: Map<string, Song> | null = null; // `${artistSlug}::${normalizedTitle}`
+const normTitle = (s: string) =>
+  (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+function ensureMaps() {
+  if (_byId) return;
+  _byId = new Map();
+  _byKey = new Map();
+  for (const a of ARTISTS) {
+    for (const s of a.songs) {
+      _byId.set(s.id, s);
+      _byKey.set(`${s.artistSlug}::${normTitle(s.title)}`, s);
+    }
+  }
+}
+/** Resolve an API row (favorite / playlist_song) to the catalog Song with audioUrl. */
+export function resolveCatalogSong(row: {
+  songId?: string; song_id?: string;
+  songTitle?: string; song_title?: string; title?: string;
+  artistSlug?: string; artist_slug?: string;
+  artistName?: string; artist_name?: string;
+  cover?: string; cover_image?: string;
+  genre?: string; duration?: number;
+}): Song | null {
+  ensureMaps();
+  const id = String(row.songId ?? row.song_id ?? "");
+  if (id && _byId!.has(id)) return _byId!.get(id)!;
+  const slug = row.artistSlug ?? row.artist_slug ?? "";
+  const title = row.title ?? row.songTitle ?? row.song_title ?? "";
+  const k = `${slug}::${normTitle(title)}`;
+  if (_byKey!.has(k)) return _byKey!.get(k)!;
+  return null;
+}
 
 export type ApiPlaylist = {
   id: number;
@@ -56,9 +92,17 @@ type Ctx = {
 const LibraryCtx = createContext<Ctx | null>(null);
 
 /** Convert API favorite/playlist-song row to the front-end `Song` shape. */
-function rowToSong(r: any): Song {
+/**
+ * Convert API favorite/playlist-song row → front-end `Song`.
+ * IMPORTANT: BDD rows lack `audioUrl`. We resolve against the local catalog
+ * so the player gets a real, playable file. If unresolved we still return a
+ * shell so the UI shows the row, but with `__unplayable` true.
+ */
+export function rowToSong(r: any): Song & { __unplayable?: boolean } {
+  const resolved = resolveCatalogSong(r);
+  if (resolved) return resolved;
   return {
-    id: String(r.songId ?? r.song_id),
+    id: String(r.songId ?? r.song_id ?? ""),
     title: r.title ?? r.song_title ?? "",
     artistName: r.artist ?? r.artist_name ?? "",
     artistSlug: r.artistSlug ?? r.artist_slug ?? "",
@@ -67,6 +111,7 @@ function rowToSong(r: any): Song {
     genre: r.genre ?? "",
     url: "",
     audioUrl: undefined,
+    __unplayable: true,
   };
 }
 

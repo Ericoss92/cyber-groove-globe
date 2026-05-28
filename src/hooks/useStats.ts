@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/api/client";
 
 export type Stats = {
@@ -13,22 +13,27 @@ export type Stats = {
   listeningByMonth: Record<string, number>;
 };
 
-/** Récupère les stats utilisateur depuis l'API avec cache local court (60s). */
+/**
+ * Stats utilisateur. Cache court (60s) au mount; `refresh()` invalide le cache
+ * et refetch. Réagit aussi à l'évènement `sw:stats-dirty` émis par le player
+ * après un flush d'écoute — pas besoin de logout/login.
+ */
 export function useStats() {
   const [data, setData] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true); setError(null);
+    try { sessionStorage.removeItem("sw.stats"); } catch {}
     try {
       const s = await api.getStats() as Stats;
       setData(s);
       try { sessionStorage.setItem("sw.stats", JSON.stringify({ at: Date.now(), s })); } catch {}
     } catch (e: any) {
-      setError(e.message || "Erreur réseau");
+      setError(e?.message || "Erreur réseau");
     } finally { setLoading(false); }
-  }
+  }, []);
 
   useEffect(() => {
     try {
@@ -39,7 +44,13 @@ export function useStats() {
       }
     } catch { /* noop */ }
     refresh();
-  }, []);
+  }, [refresh]);
+
+  useEffect(() => {
+    const onDirty = () => { refresh(); };
+    window.addEventListener("sw:stats-dirty", onDirty);
+    return () => window.removeEventListener("sw:stats-dirty", onDirty);
+  }, [refresh]);
 
   return { data, error, loading, refresh };
 }
