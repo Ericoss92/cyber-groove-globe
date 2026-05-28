@@ -307,9 +307,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     ensureAudioGraph();
     const a = getActive();
     const primary = current.audioUrl || current.url;
+    // Guard: no playable URL (e.g. BDD-only row that couldn't be resolved to
+    // the local catalog). Don't reuse the previously loaded src — that's the
+    // bug where favorites/playlists "played the last song".
+    if (!primary) {
+      console.error(`[player] no audioUrl for "${current.title}" (${current.id})`);
+      try { a.pause(); } catch {}
+      setPlaying(false);
+      return;
+    }
     const fallback = current.audioUrl ? current.url : null;
-    // Compare against the *tracked* loaded key, not a.src (which the browser
-    // resolves to an absolute URL and would never equal a relative path).
     const key = activeKey.current;
     if (loadedSrc.current[key] !== primary) {
       const onErr = () => {
