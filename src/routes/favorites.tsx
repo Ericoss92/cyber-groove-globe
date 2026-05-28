@@ -24,7 +24,11 @@ function FavoritesPage() {
           <p className="text-xs font-mono text-muted-foreground mt-1">{songs.length} chansons</p>
         </div>
         {songs.length > 0 && (
-          <button onClick={() => p.playQueue(songs, 0)}
+          <button onClick={() => {
+            const playable = songs.filter((s: any) => !s.__unplayable && (s.audioUrl || s.url));
+            if (!playable.length) { toast.error("Aucun favori n'a de fichier audio disponible"); return; }
+            p.playQueue(playable, 0);
+          }}
             className="flex items-center gap-2 px-4 py-2 rounded bg-[color:var(--neon-pink)] text-[color:var(--background)] font-medium hover:scale-105 transition box-glow-pink">
             <Play className="size-4" /> Tout lire
           </button>
