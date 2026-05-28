@@ -13,11 +13,12 @@ import { CustomSlider } from "./CustomSlider";
 
 export default function PlayerBar() {
   const p = usePlayer();
+  const lib = useLibrary();
   const [addOpen, setAddOpen] = useState(false);
 
   if (!p.current) return null;
 
-  const fav = storage.isFavorite(p.current.id);
+  const fav = lib.isFavorite(p.current.id);
   const pct = p.duration ? (p.currentTime / p.duration) * 100 : 0;
 
   return (
