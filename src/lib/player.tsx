@@ -241,6 +241,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [volume, repeatMode, shuffle, muted]);
 
+  // Flush in-flight listening session before the page unloads. Uses
+  // keepalive fetch so the Authorization header is preserved.
+  useEffect(() => {
+    const onUnload = () => { flushSession({ beacon: true }); };
+    window.addEventListener("beforeunload", onUnload);
+    window.addEventListener("pagehide", onUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onUnload);
+      window.removeEventListener("pagehide", onUnload);
+    };
+  }, [flushSession]);
+
   // Audio events on active element
   useEffect(() => {
     const handler = () => {
