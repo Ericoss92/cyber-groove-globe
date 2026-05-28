@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { storage, type Playlist } from "@/lib/storage";
+import { useEffect, useState } from "react";
+import { useLibrary, type ApiPlaylist } from "@/lib/library";
 import SongTable from "@/components/SongTable";
 import { usePlayer } from "@/lib/player";
+import type { Song } from "@/lib/types";
 import { Plus, Trash2, Play } from "lucide-react";
 
 export const Route = createFileRoute("/playlists")({
@@ -13,15 +14,21 @@ export const Route = createFileRoute("/playlists")({
 const COLORS = ["#00FF41", "#FF006E", "#00D4FF", "#FFD700"];
 
 function PlaylistsPage() {
-  const [list, setList] = useState<Playlist[]>(typeof window !== "undefined" ? storage.getPlaylists() : []);
-  const [open, setOpen] = useState<string | null>(null);
+  const lib = useLibrary();
+  const list = lib.playlists;
+  const [open, setOpen] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(COLORS[0]);
+  const [details, setDetails] = useState<{ playlist: ApiPlaylist; songs: Song[] } | null>(null);
   const p = usePlayer();
-  const refresh = () => setList(storage.getPlaylists());
 
-  const current = list.find(x => x.id === open);
+  useEffect(() => {
+    if (open == null) { setDetails(null); return; }
+    let cancelled = false;
+    lib.getPlaylistWithSongs(open).then(d => { if (!cancelled) setDetails(d); });
+    return () => { cancelled = true; };
+  }, [open, lib, list]);
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 md:px-6 py-8">
@@ -48,7 +55,7 @@ function PlaylistsPage() {
             ))}
           </div>
           <button onClick={() => setCreating(false)} className="px-3 py-2 rounded border border-border text-sm">Annuler</button>
-          <button disabled={!name.trim()} onClick={() => { storage.createPlaylist(name.trim(), color); setName(""); setCreating(false); refresh(); }}
+          <button disabled={!name.trim()} onClick={async () => { await lib.createPlaylist(name.trim(), color); setName(""); setCreating(false); }}
             className="px-4 py-2 rounded bg-[color:var(--neon-pink)] text-[color:var(--background)] disabled:opacity-50 font-medium">Créer</button>
         </div>
       )}
@@ -61,39 +68,35 @@ function PlaylistsPage() {
             <button key={pl.id} onClick={() => setOpen(pl.id)}
               className="text-left glass rounded-xl p-4 hover:scale-[1.03] transition animate-rise"
               style={{ animationDelay: `${i * 50}ms`, boxShadow: `0 0 20px ${pl.color}55, inset 0 0 1px ${pl.color}` }}>
-              <div className="aspect-square rounded mb-3 overflow-hidden grid grid-cols-2 grid-rows-2 gap-0.5">
-                {Array.from({ length: 4 }).map((_, j) => {
-                  const s = pl.songs[j];
-                  return s ? <img key={j} src={s.cover} alt="" className="size-full object-cover" />
-                           : <div key={j} className="size-full" style={{ background: pl.color, opacity: 0.2 }} />;
-                })}
+              <div className="aspect-square rounded mb-3 grid place-items-center" style={{ background: pl.color, opacity: 0.2 }}>
+                <span className="font-display text-4xl" style={{ color: pl.color, opacity: 1 }}>{pl.name.charAt(0).toUpperCase()}</span>
               </div>
               <p className="font-display font-bold truncate" style={{ color: pl.color }}>{pl.name}</p>
-              <p className="text-[10px] font-mono text-muted-foreground">{pl.songs.length} chansons</p>
+              <p className="text-[10px] font-mono text-muted-foreground">{pl.songCount} chansons</p>
             </button>
           ))}
         </div>
       )}
 
-      {current && (
+      {details && (
         <section className="glass rounded-xl p-5 box-glow-pink">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
-              <h2 className="font-display text-2xl" style={{ color: current.color, textShadow: `0 0 10px ${current.color}` }}>{current.name}</h2>
-              <p className="text-xs font-mono text-muted-foreground">{current.songs.length} chansons</p>
+              <h2 className="font-display text-2xl" style={{ color: details.playlist.color, textShadow: `0 0 10px ${details.playlist.color}` }}>{details.playlist.name}</h2>
+              <p className="text-xs font-mono text-muted-foreground">{details.songs.length} chansons</p>
             </div>
             <div className="flex gap-2">
-              <button disabled={current.songs.length === 0} onClick={() => p.playQueue(current.songs, 0)}
+              <button disabled={details.songs.length === 0} onClick={() => p.playQueue(details.songs, 0)}
                 className="flex items-center gap-2 px-3 py-2 rounded bg-[color:var(--neon-green)] text-[color:var(--background)] disabled:opacity-50 font-medium">
                 <Play className="size-4" /> Lire
               </button>
-              <button onClick={() => { if (confirm("Supprimer cette playlist ?")) { storage.deletePlaylist(current.id); setOpen(null); refresh(); } }}
+              <button onClick={async () => { if (confirm("Supprimer cette playlist ?")) { await lib.deletePlaylist(details.playlist.id); setOpen(null); } }}
                 className="flex items-center gap-2 px-3 py-2 rounded border border-[color:var(--neon-red)]/40 text-[color:var(--neon-red)] hover:bg-[color:var(--neon-red)]/10">
                 <Trash2 className="size-4" /> Supprimer
               </button>
             </div>
           </div>
-          {current.songs.length > 0 ? <SongTable songs={current.songs} showArtist /> : <p className="text-muted-foreground text-center py-8">Playlist vide.</p>}
+          {details.songs.length > 0 ? <SongTable songs={details.songs} showArtist /> : <p className="text-muted-foreground text-center py-8">Playlist vide.</p>}
         </section>
       )}
     </div>
