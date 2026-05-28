@@ -65,7 +65,7 @@ export default function PlayerBar() {
 
           {/* Right: extras */}
           <div className="flex items-center justify-end gap-1 md:gap-2">
-            <IconBtn onClick={() => { storage.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
+            <IconBtn onClick={() => { void lib.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
               <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
             </IconBtn>
             <IconBtn onClick={() => setAddOpen(true)} label="Ajouter à une playlist"><Plus className="size-4" /></IconBtn>
