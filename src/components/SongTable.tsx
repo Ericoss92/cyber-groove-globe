@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Play, Heart, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { Song } from "@/lib/types";
 import { usePlayer } from "@/lib/player";
 import { useLibrary } from "@/lib/library";
@@ -10,6 +11,15 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
   const p = usePlayer();
   const lib = useLibrary();
   const [addSong, setAddSong] = useState<Song | null>(null);
+
+  function play(at: number) {
+    const target = songs[at] as Song & { __unplayable?: boolean };
+    if (!target || target.__unplayable || !(target.audioUrl || target.url)) {
+      toast.error(`Fichier audio introuvable pour "${target?.title ?? "ce titre"}"`);
+      return;
+    }
+    p.playQueue(songs, at);
+  }
 
   return (
     <>
