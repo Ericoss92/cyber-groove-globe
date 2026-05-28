@@ -35,6 +35,8 @@ function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null); setInfo(null);
+    // Wipe any leftover cache from a previous user before authenticating.
+    clearUserCaches();
     // 1) Try real backend (Node/Express + MariaDB)
     try {
       const { api } = await import("@/api/client");
