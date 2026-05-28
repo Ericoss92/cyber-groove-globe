@@ -28,7 +28,7 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
           <tbody>
             {songs.map((s, i) => {
               const isCurrent = p.current?.id === s.id;
-              const fav = storage.isFavorite(s.id);
+              const fav = lib.isFavorite(s.id);
               return (
                 <tr key={s.id}
                   className={`group border-b border-white/5 transition hover:bg-[color:var(--neon-green)]/5 ${isCurrent ? "bg-[color:var(--neon-green)]/10" : ""}`}>
