@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ARTISTS, artistBySlug } from "@/data/music";
 import SongTable from "@/components/SongTable";
 import { usePlayer } from "@/lib/player";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import { Play, Heart, Plus, Instagram, Twitter, Youtube, Music2, Pencil } from "lucide-react";
 import AddToPlaylistModal from "@/components/AddToPlaylistModal";
 import { formatNumber } from "@/lib/format";
