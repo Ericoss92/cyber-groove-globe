@@ -320,9 +320,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setPlaying(false);
       });
       storage.addRecent(current);
-      logPlayToServer(current);
+      startSession(current);
     }
-  }, [current, ensureAudioGraph]);
+  }, [current, ensureAudioGraph, startSession]);
 
 
   function pickNextIndex(): number | null {
