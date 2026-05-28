@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Play, Heart, Plus } from "lucide-react";
 import type { Song } from "@/lib/types";
 import { usePlayer } from "@/lib/player";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import { formatDuration } from "@/data/music";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 
 export default function SongTable({ songs, showArtist = false }: { songs: Song[]; showArtist?: boolean }) {
   const p = usePlayer();
+  const lib = useLibrary();
   const [addSong, setAddSong] = useState<Song | null>(null);
 
   return (
