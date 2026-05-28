@@ -17,6 +17,7 @@ import PlayerBar from "@/components/PlayerBar";
 import Starfield from "@/components/Starfield";
 import AppSidebar from "@/components/AppSidebar";
 import { PlayerProvider } from "@/lib/player";
+import { LibraryProvider } from "@/lib/library";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { storage } from "@/lib/storage";
 import { api, cachedUser, tokens } from "@/api/client";
@@ -152,25 +153,27 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PlayerProvider>
-        <Starfield />
-        <AuthGate>
-          {isPublic ? (
-            <Outlet />
-          ) : (
-            <SidebarProvider defaultOpen>
-              <div className="min-h-screen flex w-full">
-                <AppSidebar />
-                <SidebarInset className="flex flex-col bg-transparent">
-                  <Header />
-                  <main className="flex-1 pb-4">
-                    <Outlet />
-                  </main>
-                  <PlayerBar />
-                </SidebarInset>
-              </div>
-            </SidebarProvider>
-          )}
-        </AuthGate>
+        <LibraryProvider>
+          <Starfield />
+          <AuthGate>
+            {isPublic ? (
+              <Outlet />
+            ) : (
+              <SidebarProvider defaultOpen>
+                <div className="min-h-screen flex w-full">
+                  <AppSidebar />
+                  <SidebarInset className="flex flex-col bg-transparent">
+                    <Header />
+                    <main className="flex-1 pb-4">
+                      <Outlet />
+                    </main>
+                    <PlayerBar />
+                  </SidebarInset>
+                </div>
+              </SidebarProvider>
+            )}
+          </AuthGate>
+        </LibraryProvider>
       </PlayerProvider>
     </QueryClientProvider>
   );

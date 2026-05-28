@@ -5,7 +5,7 @@ import {
   Repeat, Repeat1, Shuffle, Heart, Plus, Maximize2, X
 } from "lucide-react";
 import { usePlayer } from "@/lib/player";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import { formatDuration } from "@/data/music";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import { CustomSlider } from "./CustomSlider";
@@ -13,11 +13,12 @@ import { CustomSlider } from "./CustomSlider";
 
 export default function PlayerBar() {
   const p = usePlayer();
+  const lib = useLibrary();
   const [addOpen, setAddOpen] = useState(false);
 
   if (!p.current) return null;
 
-  const fav = storage.isFavorite(p.current.id);
+  const fav = lib.isFavorite(p.current.id);
   const pct = p.duration ? (p.currentTime / p.duration) * 100 : 0;
 
   return (
@@ -64,7 +65,7 @@ export default function PlayerBar() {
 
           {/* Right: extras */}
           <div className="flex items-center justify-end gap-1 md:gap-2">
-            <IconBtn onClick={() => { storage.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
+            <IconBtn onClick={() => { void lib.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
               <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
             </IconBtn>
             <IconBtn onClick={() => setAddOpen(true)} label="Ajouter à une playlist"><Plus className="size-4" /></IconBtn>
@@ -125,8 +126,9 @@ function ProgressBar({ pct, duration, onSeek }: { pct: number; duration: number;
 
 function FullscreenPlayer({ onAddToPlaylist }: { onAddToPlaylist: () => void }) {
   const p = usePlayer();
+  const lib = useLibrary();
   if (!p.current) return null;
-  const fav = storage.isFavorite(p.current.id);
+  const fav = lib.isFavorite(p.current.id);
   const pct = p.duration ? (p.currentTime / p.duration) * 100 : 0;
 
   return (
@@ -166,7 +168,7 @@ function FullscreenPlayer({ onAddToPlaylist }: { onAddToPlaylist: () => void }) 
           </IconBtn>
         </div>
         <div className="flex items-center gap-3">
-          <IconBtn onClick={() => { storage.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
+          <IconBtn onClick={() => { void lib.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
             <Heart className={`size-5 ${fav ? "fill-current" : ""}`} />
           </IconBtn>
           <IconBtn onClick={onAddToPlaylist} label="Ajouter à une playlist"><Plus className="size-5" /></IconBtn>

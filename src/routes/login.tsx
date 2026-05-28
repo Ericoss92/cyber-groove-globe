@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { storage } from "@/lib/storage";
 import { cachedUser } from "@/api/client";
+import { clearUserCaches } from "@/lib/library";
 import Logo from "@/components/Logo";
 import { ShieldCheck, KeyRound, UserPlus } from "lucide-react";
 
@@ -34,6 +35,8 @@ function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null); setInfo(null);
+    // Wipe any leftover cache from a previous user before authenticating.
+    clearUserCaches();
     // 1) Try real backend (Node/Express + MariaDB)
     try {
       const { api } = await import("@/api/client");

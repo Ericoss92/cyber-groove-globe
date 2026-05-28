@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ARTISTS, artistBySlug } from "@/data/music";
 import SongTable from "@/components/SongTable";
 import { usePlayer } from "@/lib/player";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import { Play, Heart, Plus, Instagram, Twitter, Youtube, Music2, Pencil } from "lucide-react";
 import AddToPlaylistModal from "@/components/AddToPlaylistModal";
 import { formatNumber } from "@/lib/format";
@@ -39,6 +39,7 @@ type Meta = {
 function ArtistPage() {
   const { artist } = Route.useLoaderData();
   const p = usePlayer();
+  const lib = useLibrary();
   const u = cachedUser.get();
   const [addOpen, setAddOpen] = useState(false);
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -51,7 +52,7 @@ function ArtistPage() {
     return () => { active = false; };
   }, [artist.slug]);
 
-  const fav = artist.songs.length ? storage.isFavorite(artist.songs[0].id) : false;
+  const fav = artist.songs.length ? lib.isFavorite(artist.songs[0].id) : false;
 
   // Merge BDD metadata with generated catalog data — BDD wins.
   const display = useMemo(() => {
@@ -130,7 +131,7 @@ function ArtistPage() {
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-[color:var(--neon-green)] text-[color:var(--background)] font-medium hover:scale-105 transition box-glow-green">
                 <Play className="size-4" /> Tout lire
               </button>
-              <button onClick={() => { artist.songs.forEach((s: any) => storage.toggleFavorite(s)); p.bumpFav(); }}
+              <button onClick={() => { artist.songs.forEach((s: any) => { void lib.toggleFavorite(s); }); p.bumpFav(); }}
                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md border transition hover:scale-105 ${fav ? "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)]" : "border-border hover:border-[color:var(--neon-pink)]"}`}>
                 <Heart className="size-4" /> Favoris
               </button>

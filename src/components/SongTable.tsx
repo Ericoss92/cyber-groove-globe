@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Play, Heart, Plus } from "lucide-react";
 import type { Song } from "@/lib/types";
 import { usePlayer } from "@/lib/player";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import { formatDuration } from "@/data/music";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 
 export default function SongTable({ songs, showArtist = false }: { songs: Song[]; showArtist?: boolean }) {
   const p = usePlayer();
+  const lib = useLibrary();
   const [addSong, setAddSong] = useState<Song | null>(null);
 
   return (
@@ -27,7 +28,7 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
           <tbody>
             {songs.map((s, i) => {
               const isCurrent = p.current?.id === s.id;
-              const fav = storage.isFavorite(s.id);
+              const fav = lib.isFavorite(s.id);
               return (
                 <tr key={s.id}
                   className={`group border-b border-white/5 transition hover:bg-[color:var(--neon-green)]/5 ${isCurrent ? "bg-[color:var(--neon-green)]/10" : ""}`}>
@@ -46,7 +47,7 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
                       <button onClick={() => p.playQueue(songs, i)} aria-label="Lire" className="p-1.5 rounded hover:text-[color:var(--neon-green)] hover:scale-110 transition"><Play className="size-4" /></button>
-                      <button onClick={() => { storage.toggleFavorite(s); p.bumpFav(); }} aria-label="Favoris" className={`p-1.5 rounded hover:scale-110 transition ${fav ? "text-[color:var(--neon-pink)]" : "hover:text-[color:var(--neon-pink)]"}`}>
+                      <button onClick={() => { void lib.toggleFavorite(s); p.bumpFav(); }} aria-label="Favoris" className={`p-1.5 rounded hover:scale-110 transition ${fav ? "text-[color:var(--neon-pink)]" : "hover:text-[color:var(--neon-pink)]"}`}>
                         <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
                       </button>
                       <button onClick={() => setAddSong(s)} aria-label="Ajouter à une playlist" className="p-1.5 rounded hover:text-[color:var(--neon-cyan)] hover:scale-110 transition"><Plus className="size-4" /></button>

@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { X, Plus } from "lucide-react";
-import { storage, type Playlist } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import type { Song } from "@/lib/types";
 
 const COLORS = ["#00FF41", "#FF006E", "#00D4FF", "#FFD700"];
 
 export default function AddToPlaylistModal({ song, onClose }: { song: Song; onClose: () => void }) {
-  const [playlists, setPlaylists] = useState<Playlist[]>(storage.getPlaylists());
+  const lib = useLibrary();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(COLORS[0]);
   const [toast, setToast] = useState("");
-
-  const refresh = () => setPlaylists(storage.getPlaylists());
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Ajouter à une playlist"
@@ -26,18 +24,18 @@ export default function AddToPlaylistModal({ song, onClose }: { song: Song; onCl
         </div>
         <p className="text-xs font-mono text-muted-foreground mb-3 truncate">{song.title} · {song.artistName}</p>
 
-        {playlists.length === 0 && !creating && (
+        {lib.playlists.length === 0 && !creating && (
           <p className="text-sm text-muted-foreground mb-3">Aucune playlist. Créez-en une.</p>
         )}
 
         <div className="space-y-1 max-h-60 overflow-auto mb-3">
-          {playlists.map(pl => (
+          {lib.playlists.map(pl => (
             <button key={pl.id}
-              onClick={() => { storage.addToPlaylist(pl.id, song); setToast(`Ajouté à "${pl.name}"`); setTimeout(onClose, 700); }}
+              onClick={async () => { await lib.addSongToPlaylist(pl.id, song); setToast(`Ajouté à "${pl.name}"`); setTimeout(onClose, 700); }}
               className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-[color:var(--neon-green)]/10 text-left">
               <span className="size-3 rounded-full" style={{ background: pl.color, boxShadow: `0 0 10px ${pl.color}` }} />
               <span className="flex-1 truncate">{pl.name}</span>
-              <span className="text-xs font-mono text-muted-foreground">{pl.songs.length}</span>
+              <span className="text-xs font-mono text-muted-foreground">{pl.songCount}</span>
             </button>
           ))}
         </div>
@@ -61,10 +59,9 @@ export default function AddToPlaylistModal({ song, onClose }: { song: Song; onCl
             </div>
             <div className="flex gap-2">
               <button onClick={() => setCreating(false)} className="flex-1 py-2 rounded border border-border text-sm">Annuler</button>
-              <button disabled={!name.trim()} onClick={() => {
-                const pl = storage.createPlaylist(name.trim(), color);
-                storage.addToPlaylist(pl.id, song);
-                setToast(`Créée et ajoutée à "${pl.name}"`); refresh();
+              <button disabled={!name.trim()} onClick={async () => {
+                const pl = await lib.createPlaylist(name.trim(), color);
+                if (pl) { await lib.addSongToPlaylist(pl.id, song); setToast(`Créée et ajoutée à "${pl.name}"`); }
                 setTimeout(onClose, 700);
               }}
                 className="flex-1 py-2 rounded bg-[color:var(--neon-green)] text-[color:var(--background)] font-medium disabled:opacity-50">

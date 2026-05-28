@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { storage } from "@/lib/storage";
+import { useLibrary } from "@/lib/library";
 import SongTable from "@/components/SongTable";
 import { usePlayer } from "@/lib/player";
 import { Play } from "lucide-react";
@@ -12,10 +11,8 @@ export const Route = createFileRoute("/favorites")({
 
 function FavoritesPage() {
   const p = usePlayer();
-  // re-read on favTick changes
-  const [, setT] = useState(0);
-  if (typeof window !== "undefined") void p.favTick;
-  const songs = typeof window !== "undefined" ? storage.getFavorites() : [];
+  const lib = useLibrary();
+  const songs = lib.favorites;
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 md:px-6 py-8">
@@ -35,7 +32,6 @@ function FavoritesPage() {
       {songs.length === 0
         ? <p className="text-center text-muted-foreground py-16 font-mono">// no favorites yet</p>
         : <SongTable songs={songs} showArtist />}
-      <button onClick={() => setT(t => t + 1)} className="hidden">refresh</button>
     </div>
   );
 }

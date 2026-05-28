@@ -2,29 +2,73 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Song } from "./types";
 import { storage } from "./storage";
 import { artistBySlug } from "@/data/music";
+import { tokens } from "@/api/client";
 
-/** Fire-and-forget server log of a play event (best-effort, ignores errors). */
-function logPlayToServer(song: Song) {
-  if (typeof window === "undefined") return;
-  try {
-    const t = localStorage.getItem("sw.token");
-    if (!t) return;
-  } catch { return; }
-  const a = artistBySlug(song.artistSlug);
-  import("@/api/client").then(({ api }) => {
-    api.logPlay({
-      songId: song.id,
-      songTitle: song.title,
-      artistName: song.artistName,
-      artistSlug: song.artistSlug,
-      artistCountry: a?.country,
-      artistContinent: a?.continent,
-      genre: song.genre,
-      durationPlayedSeconds: 0,
-      completed: false,
-      playedPercentage: 0,
-    }).catch(() => {});
-  }).catch(() => {});
+/**
+ * Listening-session tracker.
+ *
+ * We do NOT send a 0-duration log at play start. Instead we accumulate the
+ * real wall-clock time the audio element was actively playing and POST a
+ * single /api/history/log when the session ends (track change, pause-then-
+ * other-track, ended, or beforeunload). This keeps `duration_played_seconds`,
+ * `played_percentage` and `completed` accurate and avoids the bug where every
+ * play created a row with `duration_played_seconds = 0`.
+ *
+ * Sessions shorter than 5s are dropped so quick skips do not pollute history.
+ */
+type PlaySession = {
+  song: Song;
+  accumulated: number;            // seconds actually played
+  lastResume: number | null;      // ms epoch when playback last (re)started
+};
+
+const COMPLETION_THRESHOLD = 80; // percent
+
+function computeFinal(s: PlaySession) {
+  let secs = s.accumulated;
+  if (s.lastResume) secs += (Date.now() - s.lastResume) / 1000;
+  return Math.round(secs);
+}
+
+function buildLogPayload(s: PlaySession, opts?: { completed?: boolean }) {
+  const secs = computeFinal(s);
+  if (secs < 5) return null;
+  const dur = s.song.duration || 0;
+  const pct = dur ? Math.min(100, Math.round((secs / dur) * 10000) / 100) : 0;
+  const completed = opts?.completed ?? pct >= COMPLETION_THRESHOLD;
+  const a = artistBySlug(s.song.artistSlug);
+  return {
+    songId: s.song.id,
+    songTitle: s.song.title,
+    artistName: s.song.artistName,
+    artistSlug: s.song.artistSlug,
+    artistCountry: a?.country,
+    artistContinent: a?.continent,
+    genre: s.song.genre,
+    durationPlayedSeconds: secs,
+    completed,
+    playedPercentage: pct,
+  };
+}
+
+function flushSessionToServer(session: PlaySession, opts?: { completed?: boolean; beacon?: boolean }) {
+  const payload = buildLogPayload(session, opts);
+  if (!payload) return;
+  const t = tokens.access;
+  if (!t) return;
+  if (opts?.beacon) {
+    // beforeunload path — use keepalive fetch (sendBeacon can't set Authorization)
+    try {
+      fetch("/api/history/log", {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch { /* noop */ }
+    return;
+  }
+  import("@/api/client").then(({ api }) => { api.logPlay(payload).catch(() => {}); }).catch(() => {});
 }
 
 type Ctx = {
@@ -86,6 +130,34 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // `a.src` (absolute, resolved by the browser) to the raw audioUrl
   // (often a relative path), they differ, and the song restarts at 0.
   const loadedSrc = useRef<{ A: string | null; B: string | null }>({ A: null, B: null });
+  // Active listening session (the song currently being timed). Flushed when
+  // the user switches track, the track ends, or the page unloads.
+  const session = useRef<PlaySession | null>(null);
+
+  const startSession = useCallback((song: Song) => {
+    // flush any previous session (track-change) before starting a new one
+    if (session.current && session.current.song.id !== song.id) {
+      flushSessionToServer(session.current);
+    }
+    session.current = { song, accumulated: 0, lastResume: Date.now() };
+  }, []);
+  const pauseSession = useCallback(() => {
+    const s = session.current;
+    if (!s || !s.lastResume) return;
+    s.accumulated += (Date.now() - s.lastResume) / 1000;
+    s.lastResume = null;
+  }, []);
+  const resumeSession = useCallback(() => {
+    const s = session.current;
+    if (!s) return;
+    if (!s.lastResume) s.lastResume = Date.now();
+  }, []);
+  const flushSession = useCallback((opts?: { completed?: boolean; beacon?: boolean }) => {
+    const s = session.current;
+    if (!s) return;
+    flushSessionToServer(s, opts);
+    session.current = null;
+  }, []);
 
   if (typeof window !== "undefined" && !audioA.current) {
     audioA.current = new Audio();
@@ -169,6 +241,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [volume, repeatMode, shuffle, muted]);
 
+  // Flush in-flight listening session before the page unloads. Uses
+  // keepalive fetch so the Authorization header is preserved.
+  useEffect(() => {
+    const onUnload = () => { flushSession({ beacon: true }); };
+    window.addEventListener("beforeunload", onUnload);
+    window.addEventListener("pagehide", onUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onUnload);
+      window.removeEventListener("pagehide", onUnload);
+    };
+  }, [flushSession]);
+
   // Audio events on active element
   useEffect(() => {
     const handler = () => {
@@ -187,9 +271,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         startCrossfade();
       }
     };
-    const onPlay = () => setPlaying(true);
-    const onPause = () => { if (!crossfading.current) setPlaying(false); };
-    const onEnded = () => { if (!crossfading.current) handleEnded(); };
+    const onPlay = () => { setPlaying(true); resumeSession(); };
+    const onPause = () => { if (!crossfading.current) { setPlaying(false); pauseSession(); } };
+    const onEnded = () => {
+      if (crossfading.current) return;
+      // Track played to natural end → completed = true
+      flushSession({ completed: true });
+      handleEnded();
+    };
 
     [audioA.current, audioB.current].forEach(a => {
       if (!a) return;
@@ -243,9 +332,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setPlaying(false);
       });
       storage.addRecent(current);
-      logPlayToServer(current);
+      startSession(current);
     }
-  }, [current, ensureAudioGraph]);
+  }, [current, ensureAudioGraph, startSession]);
 
 
   function pickNextIndex(): number | null {
@@ -280,7 +369,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     inactive.currentTime = 0;
     inactive.play().catch(() => {});
     storage.addRecent(nextSong);
-    logPlayToServer(nextSong);
+    // The old song reached crossfade window → treat as completed and flush,
+    // then start tracking the new one.
+    flushSession({ completed: true });
+    startSession(nextSong);
+
+
 
 
     const t = ctx.currentTime;
