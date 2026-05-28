@@ -39,6 +39,7 @@ type Meta = {
 function ArtistPage() {
   const { artist } = Route.useLoaderData();
   const p = usePlayer();
+  const lib = useLibrary();
   const u = cachedUser.get();
   const [addOpen, setAddOpen] = useState(false);
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -51,7 +52,7 @@ function ArtistPage() {
     return () => { active = false; };
   }, [artist.slug]);
 
-  const fav = artist.songs.length ? storage.isFavorite(artist.songs[0].id) : false;
+  const fav = artist.songs.length ? lib.isFavorite(artist.songs[0].id) : false;
 
   // Merge BDD metadata with generated catalog data — BDD wins.
   const display = useMemo(() => {
