@@ -130,6 +130,34 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // `a.src` (absolute, resolved by the browser) to the raw audioUrl
   // (often a relative path), they differ, and the song restarts at 0.
   const loadedSrc = useRef<{ A: string | null; B: string | null }>({ A: null, B: null });
+  // Active listening session (the song currently being timed). Flushed when
+  // the user switches track, the track ends, or the page unloads.
+  const session = useRef<PlaySession | null>(null);
+
+  const startSession = useCallback((song: Song) => {
+    // flush any previous session (track-change) before starting a new one
+    if (session.current && session.current.song.id !== song.id) {
+      flushSessionToServer(session.current);
+    }
+    session.current = { song, accumulated: 0, lastResume: Date.now() };
+  }, []);
+  const pauseSession = useCallback(() => {
+    const s = session.current;
+    if (!s || !s.lastResume) return;
+    s.accumulated += (Date.now() - s.lastResume) / 1000;
+    s.lastResume = null;
+  }, []);
+  const resumeSession = useCallback(() => {
+    const s = session.current;
+    if (!s) return;
+    if (!s.lastResume) s.lastResume = Date.now();
+  }, []);
+  const flushSession = useCallback((opts?: { completed?: boolean; beacon?: boolean }) => {
+    const s = session.current;
+    if (!s) return;
+    flushSessionToServer(s, opts);
+    session.current = null;
+  }, []);
 
   if (typeof window !== "undefined" && !audioA.current) {
     audioA.current = new Audio();
