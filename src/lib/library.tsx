@@ -92,9 +92,17 @@ type Ctx = {
 const LibraryCtx = createContext<Ctx | null>(null);
 
 /** Convert API favorite/playlist-song row to the front-end `Song` shape. */
-function rowToSong(r: any): Song {
+/**
+ * Convert API favorite/playlist-song row → front-end `Song`.
+ * IMPORTANT: BDD rows lack `audioUrl`. We resolve against the local catalog
+ * so the player gets a real, playable file. If unresolved we still return a
+ * shell so the UI shows the row, but with `__unplayable` true.
+ */
+export function rowToSong(r: any): Song & { __unplayable?: boolean } {
+  const resolved = resolveCatalogSong(r);
+  if (resolved) return resolved;
   return {
-    id: String(r.songId ?? r.song_id),
+    id: String(r.songId ?? r.song_id ?? ""),
     title: r.title ?? r.song_title ?? "",
     artistName: r.artist ?? r.artist_name ?? "",
     artistSlug: r.artistSlug ?? r.artist_slug ?? "",
@@ -103,6 +111,7 @@ function rowToSong(r: any): Song {
     genre: r.genre ?? "",
     url: "",
     audioUrl: undefined,
+    __unplayable: true,
   };
 }
 
