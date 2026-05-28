@@ -259,9 +259,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         startCrossfade();
       }
     };
-    const onPlay = () => setPlaying(true);
-    const onPause = () => { if (!crossfading.current) setPlaying(false); };
-    const onEnded = () => { if (!crossfading.current) handleEnded(); };
+    const onPlay = () => { setPlaying(true); resumeSession(); };
+    const onPause = () => { if (!crossfading.current) { setPlaying(false); pauseSession(); } };
+    const onEnded = () => {
+      if (crossfading.current) return;
+      // Track played to natural end → completed = true
+      flushSession({ completed: true });
+      handleEnded();
+    };
 
     [audioA.current, audioB.current].forEach(a => {
       if (!a) return;
