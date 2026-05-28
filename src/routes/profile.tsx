@@ -6,6 +6,7 @@ import { api, cachedUser, tokens } from "@/api/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useStats } from "@/hooks/useStats";
 import { storage } from "@/lib/storage";
+import { clearUserCaches } from "@/lib/library";
 import { AudioPreferencesBlock } from "@/components/AudioPreferencesBlock";
 
 
