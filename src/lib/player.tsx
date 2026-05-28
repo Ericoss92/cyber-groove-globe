@@ -2,29 +2,73 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Song } from "./types";
 import { storage } from "./storage";
 import { artistBySlug } from "@/data/music";
+import { tokens } from "@/api/client";
 
-/** Fire-and-forget server log of a play event (best-effort, ignores errors). */
-function logPlayToServer(song: Song) {
-  if (typeof window === "undefined") return;
-  try {
-    const t = localStorage.getItem("sw.token");
-    if (!t) return;
-  } catch { return; }
-  const a = artistBySlug(song.artistSlug);
-  import("@/api/client").then(({ api }) => {
-    api.logPlay({
-      songId: song.id,
-      songTitle: song.title,
-      artistName: song.artistName,
-      artistSlug: song.artistSlug,
-      artistCountry: a?.country,
-      artistContinent: a?.continent,
-      genre: song.genre,
-      durationPlayedSeconds: 0,
-      completed: false,
-      playedPercentage: 0,
-    }).catch(() => {});
-  }).catch(() => {});
+/**
+ * Listening-session tracker.
+ *
+ * We do NOT send a 0-duration log at play start. Instead we accumulate the
+ * real wall-clock time the audio element was actively playing and POST a
+ * single /api/history/log when the session ends (track change, pause-then-
+ * other-track, ended, or beforeunload). This keeps `duration_played_seconds`,
+ * `played_percentage` and `completed` accurate and avoids the bug where every
+ * play created a row with `duration_played_seconds = 0`.
+ *
+ * Sessions shorter than 5s are dropped so quick skips do not pollute history.
+ */
+type PlaySession = {
+  song: Song;
+  accumulated: number;            // seconds actually played
+  lastResume: number | null;      // ms epoch when playback last (re)started
+};
+
+const COMPLETION_THRESHOLD = 80; // percent
+
+function computeFinal(s: PlaySession) {
+  let secs = s.accumulated;
+  if (s.lastResume) secs += (Date.now() - s.lastResume) / 1000;
+  return Math.round(secs);
+}
+
+function buildLogPayload(s: PlaySession, opts?: { completed?: boolean }) {
+  const secs = computeFinal(s);
+  if (secs < 5) return null;
+  const dur = s.song.duration || 0;
+  const pct = dur ? Math.min(100, Math.round((secs / dur) * 10000) / 100) : 0;
+  const completed = opts?.completed ?? pct >= COMPLETION_THRESHOLD;
+  const a = artistBySlug(s.song.artistSlug);
+  return {
+    songId: s.song.id,
+    songTitle: s.song.title,
+    artistName: s.song.artistName,
+    artistSlug: s.song.artistSlug,
+    artistCountry: a?.country,
+    artistContinent: a?.continent,
+    genre: s.song.genre,
+    durationPlayedSeconds: secs,
+    completed,
+    playedPercentage: pct,
+  };
+}
+
+function flushSessionToServer(session: PlaySession, opts?: { completed?: boolean; beacon?: boolean }) {
+  const payload = buildLogPayload(session, opts);
+  if (!payload) return;
+  const t = tokens.access;
+  if (!t) return;
+  if (opts?.beacon) {
+    // beforeunload path — use keepalive fetch (sendBeacon can't set Authorization)
+    try {
+      fetch("/api/history/log", {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch { /* noop */ }
+    return;
+  }
+  import("@/api/client").then(({ api }) => { api.logPlay(payload).catch(() => {}); }).catch(() => {});
 }
 
 type Ctx = {
