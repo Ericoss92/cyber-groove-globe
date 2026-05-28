@@ -168,7 +168,7 @@ function FullscreenPlayer({ onAddToPlaylist }: { onAddToPlaylist: () => void }) 
           </IconBtn>
         </div>
         <div className="flex items-center gap-3">
-          <IconBtn onClick={() => { storage.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
+          <IconBtn onClick={() => { void lib.toggleFavorite(p.current!); p.bumpFav(); }} active={fav} label="Favoris">
             <Heart className={`size-5 ${fav ? "fill-current" : ""}`} />
           </IconBtn>
           <IconBtn onClick={onAddToPlaylist} label="Ajouter à une playlist"><Plus className="size-5" /></IconBtn>
