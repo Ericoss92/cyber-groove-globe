@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "./Logo";
 import { storage } from "@/lib/storage";
+import { clearUserCaches } from "@/lib/library";
 import { api, cachedUser, tokens } from "@/api/client";
 
 const PRIMARY = [
