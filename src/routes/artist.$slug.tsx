@@ -131,7 +131,7 @@ function ArtistPage() {
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-[color:var(--neon-green)] text-[color:var(--background)] font-medium hover:scale-105 transition box-glow-green">
                 <Play className="size-4" /> Tout lire
               </button>
-              <button onClick={() => { artist.songs.forEach((s: any) => storage.toggleFavorite(s)); p.bumpFav(); }}
+              <button onClick={() => { artist.songs.forEach((s: any) => { void lib.toggleFavorite(s); }); p.bumpFav(); }}
                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md border transition hover:scale-105 ${fav ? "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)]" : "border-border hover:border-[color:var(--neon-pink)]"}`}>
                 <Heart className="size-4" /> Favoris
               </button>
