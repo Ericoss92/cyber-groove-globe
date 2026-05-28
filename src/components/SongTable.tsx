@@ -47,7 +47,7 @@ export default function SongTable({ songs, showArtist = false }: { songs: Song[]
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
                       <button onClick={() => p.playQueue(songs, i)} aria-label="Lire" className="p-1.5 rounded hover:text-[color:var(--neon-green)] hover:scale-110 transition"><Play className="size-4" /></button>
-                      <button onClick={() => { storage.toggleFavorite(s); p.bumpFav(); }} aria-label="Favoris" className={`p-1.5 rounded hover:scale-110 transition ${fav ? "text-[color:var(--neon-pink)]" : "hover:text-[color:var(--neon-pink)]"}`}>
+                      <button onClick={() => { void lib.toggleFavorite(s); p.bumpFav(); }} aria-label="Favoris" className={`p-1.5 rounded hover:scale-110 transition ${fav ? "text-[color:var(--neon-pink)]" : "hover:text-[color:var(--neon-pink)]"}`}>
                         <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
                       </button>
                       <button onClick={() => setAddSong(s)} aria-label="Ajouter à une playlist" className="p-1.5 rounded hover:text-[color:var(--neon-cyan)] hover:scale-110 transition"><Plus className="size-4" /></button>
