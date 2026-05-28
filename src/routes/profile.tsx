@@ -21,7 +21,7 @@ function ProfilePage() {
 
   const navigate = useNavigate();
   const { data: profile, loading, error, refresh } = useProfile();
-  const { data: stats } = useStats();
+  const { data: stats, refresh: refreshStats, loading: statsLoading } = useStats();
 
   const [volume, setVolume] = useState(75);
   const [crossfade, setCrossfade] = useState(3);
