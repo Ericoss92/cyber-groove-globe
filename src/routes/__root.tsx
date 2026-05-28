@@ -153,25 +153,27 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PlayerProvider>
-        <Starfield />
-        <AuthGate>
-          {isPublic ? (
-            <Outlet />
-          ) : (
-            <SidebarProvider defaultOpen>
-              <div className="min-h-screen flex w-full">
-                <AppSidebar />
-                <SidebarInset className="flex flex-col bg-transparent">
-                  <Header />
-                  <main className="flex-1 pb-4">
-                    <Outlet />
-                  </main>
-                  <PlayerBar />
-                </SidebarInset>
-              </div>
-            </SidebarProvider>
-          )}
-        </AuthGate>
+        <LibraryProvider>
+          <Starfield />
+          <AuthGate>
+            {isPublic ? (
+              <Outlet />
+            ) : (
+              <SidebarProvider defaultOpen>
+                <div className="min-h-screen flex w-full">
+                  <AppSidebar />
+                  <SidebarInset className="flex flex-col bg-transparent">
+                    <Header />
+                    <main className="flex-1 pb-4">
+                      <Outlet />
+                    </main>
+                    <PlayerBar />
+                  </SidebarInset>
+                </div>
+              </SidebarProvider>
+            )}
+          </AuthGate>
+        </LibraryProvider>
       </PlayerProvider>
     </QueryClientProvider>
   );
