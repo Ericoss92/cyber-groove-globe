@@ -120,7 +120,16 @@ function ProfilePage() {
 
       {/* STATS */}
       <section className="glass rounded-xl p-5 space-y-2">
-        <h2 className="font-display text-lg glow-pink mb-2">Mes statistiques</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-display text-lg glow-pink">Mes statistiques</h2>
+          <button
+            onClick={() => refreshStats()}
+            disabled={statsLoading}
+            className="text-xs font-mono px-3 py-1 rounded border border-[color:var(--neon-cyan)]/40 text-[color:var(--neon-cyan)] hover:bg-[color:var(--neon-cyan)]/10 disabled:opacity-50"
+          >
+            {statsLoading ? "…" : "↻ Rafraîchir"}
+          </button>
+        </div>
         {stats ? (
           <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
             <div><dt className="font-mono text-[10px] text-muted-foreground uppercase">Écoutes</dt><dd>{stats.totalSongsPlayed}</dd></div>
