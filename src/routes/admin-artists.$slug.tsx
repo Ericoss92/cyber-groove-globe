@@ -204,7 +204,8 @@ function AdminArtistEditPage() {
             </Section>
 
             <Section title="Image" accent="pink">
-              <Field label="URL de l'image" value={form.imageUrl} onChange={(e) => { setImgError(false); setForm(f => ({ ...f, imageUrl: e.target.value })); }} placeholder="https://…" />
+              <Field label="URL de l'image" value={form.imageUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setImgError(false); setForm(f => ({ ...f, imageUrl: e.target.value })); }} placeholder="https://…" />
+
               <p className="text-[10px] font-mono text-muted-foreground">
                 Si vide ou cassée, l'image du catalogue local est utilisée comme fallback.
               </p>
