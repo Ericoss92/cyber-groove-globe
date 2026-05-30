@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { UserCog, Search, Pencil, CheckCircle2, AlertCircle } from "lucide-react";
 import { api, cachedUser } from "@/api/client";
@@ -11,16 +11,19 @@ export const Route = createFileRoute("/admin-artists")({
 
 function AdminArtistsPage() {
   // Hooks FIRST — never after a conditional return.
+  const location = useLocation();
   const [q, setQ] = useState("");
   const [meta, setMeta] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
   const u = cachedUser.get();
   const isAdmin = !!u?.admin;
+  const isListRoute = location.pathname.replace(/\/+$/, "") === "/admin-artists";
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || !isListRoute) return;
     let active = true;
+    setLoading(true);
     api.adminListArtists()
       .then((rows) => {
         if (!active) return;
@@ -31,7 +34,7 @@ function AdminArtistsPage() {
       .catch(() => {})
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [isAdmin]);
+  }, [isAdmin, isListRoute]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -43,6 +46,7 @@ function AdminArtistsPage() {
   }, [q]);
 
   if (!isAdmin) return <Navigate to="/" />;
+  if (!isListRoute) return <Outlet />;
 
   const completeCount = Object.values(meta).filter((m: any) => isComplete(m)).length;
 
